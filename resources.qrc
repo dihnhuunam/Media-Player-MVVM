@@ -1,0 +1,36 @@
+<RCC version="1.0">
+    <qresource prefix="/">
+        <!-- Assets -->
+        <file>Assets/shuffle.png</file>
+        <file>Assets/prev.png</file>
+        <file>Assets/play.png</file>
+        <file>Assets/pause.png</file>
+        <file>Assets/add.png</file>
+        <file>Assets/next.png</file>
+        <file>Assets/repeat.png</file>
+        <file>Assets/repeat-one.png</file>
+        <file>Assets/folder.png</file>
+        <file>Assets/menu.png</file>
+        <file>Assets/sample.png</file>
+        <file>Assets/search.png</file>
+        <file>Assets/music.png</file>
+        <file>Assets/back.png</file>
+        <file>Assets/volume.png</file>
+        <file>Assets/playlist.png</file>
+        <file>Assets/more.png</file>
+        <file>Assets/muted.png</file>
+        <file>Assets/profile.png</file>
+        <!-- Components -->
+        <file>Source/View/Components/HoverButton.qml</file>
+        <file>Source/View/Components/SliderComponent.qml</file>
+        <!-- Views -->
+        <file>Source/View/Main.qml</file>
+        <file>Source/View/MediaPlayerView.qml</file>
+        <file>Source/View/PlaylistView.qml</file>
+        <file>Source/View/MediaFileView.qml</file>
+        <file>Source/View/LoginView.qml</file>
+        <file>Source/View/RegisterView.qml</file>
+        <file>Source/View/NavigationManager.qml</file>
+        <file>Source/View/AppState.qml</file>
+    </qresource>
+</RCC>
