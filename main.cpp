@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include "AuthViewModel.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -11,6 +12,10 @@ int main(int argc, char *argv[])
     engine.addImportPath("qrc:/");
     qmlRegisterSingletonType(QUrl("qrc:/Source/View/NavigationManager.qml"), "NavigationManager", 1, 0, "NavigationManager");
     qmlRegisterSingletonType(QUrl("qrc:/Source/View/AppState.qml"), "AppState", 1, 0, "AppState");
+
+    // Register AuthViewModel as context property
+    AuthViewModel authViewModel;
+    engine.rootContext()->setContextProperty("authViewModel", &authViewModel);
 
     const QUrl url(QStringLiteral("qrc:/Source/View/Main.qml"));
     engine.load(url);

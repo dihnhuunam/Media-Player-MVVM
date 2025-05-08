@@ -1,12 +1,10 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
-import "Components"
+import QtQuick 6.8
+import QtQuick.Controls 6.8
+import QtQuick.Layouts 6.8
+import "./Components"
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
-
-    // Properties for Form
     property real formFieldHeight: 60
     property real formFieldFontSize: 24
     property real formSpacing: 20
@@ -22,7 +20,6 @@ Item {
             width: formWidth * scaleFactor
             spacing: formSpacing * scaleFactor
 
-            // Title
             Text {
                 text: "Login"
                 font.pixelSize: 36 * scaleFactor
@@ -31,7 +28,6 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
             }
 
-            // Username Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -39,22 +35,21 @@ Item {
                 color: "#e0e0e0"
 
                 TextField {
-                    id: usernameField
+                    id: emailField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     color: "#333333"
-                    placeholderText: "Username"
+                    placeholderText: "Email"
                     placeholderTextColor: "#666666"
                     verticalAlignment: Text.AlignVCenter
                     background: null
                     onFocusChanged: {
-                        console.log("Username field focus:", focus);
+                        console.log("Email field focus:", focus);
                     }
                 }
             }
 
-            // Password Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -78,30 +73,27 @@ Item {
                 }
             }
 
-            // Submit Button
             HoverButton {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
                 text: "Login"
-                flat: false
+                onClicked: {
+                    authViewModel.loginUser(emailField.text, passwordField.text);
+                    console.log("Login button clicked, email:", emailField.text);
+                }
                 background: Rectangle {
+                    color: parent.hovered ? "#005BB5" : "#0078D7" // Xanh đậm khi hover, xanh dương khi bình thường
                     radius: 30 * scaleFactor
-                    color: "#e0e0e0"
                 }
                 contentItem: Text {
                     text: parent.text
+                    color: "#FFFFFF" // Chữ trắng
                     font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#000000"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                onClicked: {
-                    console.log("Login button clicked, username:", usernameField.text);
-                    NavigationManager.navigateTo("qrc:/Source/View/PlaylistView.qml");
-                }
             }
 
-            // Play Local Music Link
             Text {
                 text: "Play local music"
                 font.pixelSize: 16 * scaleFactor
@@ -114,12 +106,11 @@ Item {
                     onExited: parent.color = "#0078D7"
                     onClicked: {
                         NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
-                        console.log("Play local music clicked, navigated to MediaPlayerView");
+                        console.log("Play local music clicked");
                     }
                 }
             }
 
-            // Register Link
             Text {
                 text: "Don't have an account? Register"
                 font.pixelSize: 16 * scaleFactor
@@ -135,6 +126,48 @@ Item {
                         console.log("Navigate to RegisterView");
                     }
                 }
+            }
+        }
+    }
+
+    Popup {
+        id: notificationPopup
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 300 * scaleFactor
+        height: 100 * scaleFactor
+        modal: true
+        focus: true
+        property string message: ""
+        property color color: "#4CAF50"
+
+        background: Rectangle {
+            color: notificationPopup.color
+            radius: 5
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: notificationPopup.message
+            font.pixelSize: formFieldFontSize * scaleFactor
+            color: "#FFFFFF"
+        }
+
+        Timer {
+            interval: 2000
+            running: notificationPopup.visible
+            onTriggered: notificationPopup.close()
+        }
+    }
+
+    Connections {
+        target: authViewModel
+        function onLoginFinished(success, message) {
+            notificationPopup.message = message;
+            notificationPopup.color = success ? "#4CAF50" : "#F44336";
+            notificationPopup.open();
+            if (success) {
+                NavigationManager.navigateTo("qrc:/Source/View/PlaylistView.qml");
             }
         }
     }

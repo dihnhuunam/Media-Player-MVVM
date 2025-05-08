@@ -1,18 +1,14 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
-import "Components"
+import QtQuick 6.8
+import QtQuick.Controls 6.8
+import QtQuick.Layouts 6.8
+import "./Components"
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1280, parent.height / 720) : 1.0
-
-    // Properties for Top Controls
     property real topControlButtonSize: 80
     property real topControlIconSize: 40
     property real topControlSpacing: 25
     property real topControlMargin: 15
-
-    // Properties for Form
     property real formFieldHeight: 50
     property real formFieldFontSize: 20
     property real formSpacing: 15
@@ -28,7 +24,6 @@ Item {
             width: formWidth * scaleFactor
             spacing: formSpacing * scaleFactor
 
-            // Back Button and Title
             RowLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: topControlMargin * scaleFactor
@@ -59,7 +54,6 @@ Item {
                 }
             }
 
-            // Username Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -67,22 +61,21 @@ Item {
                 color: "#e0e0e0"
 
                 TextField {
-                    id: usernameField
+                    id: emailField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     color: "#333333"
-                    placeholderText: "Username"
+                    placeholderText: "Email"
                     placeholderTextColor: "#666666"
                     verticalAlignment: Text.AlignVCenter
                     background: null
                     onFocusChanged: {
-                        console.log("Username field focus:", focus);
+                        console.log("Email field focus:", focus);
                     }
                 }
             }
 
-            // Full Name Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -90,7 +83,7 @@ Item {
                 color: "#e0e0e0"
 
                 TextField {
-                    id: fullNameField
+                    id: nameField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
@@ -100,12 +93,11 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                     background: null
                     onFocusChanged: {
-                        console.log("Full Name field focus:", focus);
+                        console.log("Name field focus:", focus);
                     }
                 }
             }
 
-            // Date of Birth Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -113,22 +105,24 @@ Item {
                 color: "#e0e0e0"
 
                 TextField {
-                    id: dateOfBirthField
+                    id: dobField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     color: "#333333"
-                    placeholderText: "Date of Birth (DD/MM/YYYY)"
+                    placeholderText: "Date of Birth (YYYY-MM-DD)"
                     placeholderTextColor: "#666666"
                     verticalAlignment: Text.AlignVCenter
                     background: null
+                    validator: RegularExpressionValidator {
+                        regularExpression: /\d{4}-\d{2}-\d{2}/
+                    } // Validate YYYY-MM-DD format
                     onFocusChanged: {
                         console.log("Date of Birth field focus:", focus);
                     }
                 }
             }
 
-            // Password Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -152,7 +146,6 @@ Item {
                 }
             }
 
-            // Confirm Password Field
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
@@ -176,30 +169,33 @@ Item {
                 }
             }
 
-            // Submit Button
             HoverButton {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
                 text: "Register"
-                flat: false
+                onClicked: {
+                    if (passwordField.text === confirmPasswordField.text) {
+                        authViewModel.registerUser(emailField.text, passwordField.text, nameField.text, dobField.text);
+                        console.log("Register button clicked, email:", emailField.text);
+                    } else {
+                        notificationPopup.message = "Passwords do not match";
+                        notificationPopup.color = "#F44336";
+                        notificationPopup.open();
+                    }
+                }
                 background: Rectangle {
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
+                    color: parent.hovered ? "#005BB5" : "#0078D7" // Xanh đậm khi hover, xanh dương khi bình thường
+                    radius: 30 * scaleFactor
                 }
                 contentItem: Text {
                     text: parent.text
+                    color: "#FFFFFF" // Chữ trắng
                     font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#000000"
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                onClicked: {
-                    console.log("Register button clicked, username:", usernameField.text, "full name:", fullNameField.text, "date of birth:", dateOfBirthField.text);
-                    NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
-                }
             }
 
-            // Login Link
             Text {
                 text: "Already have an account? Login"
                 font.pixelSize: 14 * scaleFactor
@@ -215,6 +211,48 @@ Item {
                         console.log("Navigate to LoginView");
                     }
                 }
+            }
+        }
+    }
+
+    Popup {
+        id: notificationPopup
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 300 * scaleFactor
+        height: 100 * scaleFactor
+        modal: true
+        focus: true
+        property string message: ""
+        property color color: "#4CAF50"
+
+        background: Rectangle {
+            color: notificationPopup.color
+            radius: 5
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: notificationPopup.message
+            font.pixelSize: formFieldFontSize * scaleFactor
+            color: "#FFFFFF"
+        }
+
+        Timer {
+            interval: 2000
+            running: notificationPopup.visible
+            onTriggered: notificationPopup.close()
+        }
+    }
+
+    Connections {
+        target: authViewModel
+        function onRegisterFinished(success, message) {
+            notificationPopup.message = message;
+            notificationPopup.color = success ? "#4CAF50" : "#F44336";
+            notificationPopup.open();
+            if (success) {
+                NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
             }
         }
     }

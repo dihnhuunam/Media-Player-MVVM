@@ -13,19 +13,26 @@ add_executable(${PROJECT_NAME}
     resources.qrc
 )
 
-list(APPEND CMAKE_PREFIX_PATH "/home/dihnhuunam/Qt/6.8.2/gcc_64")
-find_package(Qt6 
-    REQUIRED 
-    COMPONENTS 
-        Core
-        Quick 
-        Multimedia 
-        Qml
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    lViewModel
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt6::Core
-    Qt6::Quick
-    Qt6::Multimedia
-    Qt6::Qml
-)
+# list(APPEND CMAKE_PREFIX_PATH "/home/dihnhuunam/Qt/6.8.2/gcc_64")
+# find_package(Qt6 
+#     REQUIRED 
+#     COMPONENTS 
+#         Core
+#         Quick 
+#         Multimedia 
+#         Qml
+#         Gui
+#         Network
+# )
+# target_link_libraries(${PROJECT_NAME} PUBLIC
+#     Qt6::Core
+#     Qt6::Quick
+#     Qt6::Multimedia
+#     Qt6::Qml
+#     Qt6::Gui
+#     Qt6::Network
+# )
