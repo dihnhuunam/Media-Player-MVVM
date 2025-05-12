@@ -4,211 +4,228 @@ import QtQuick.Layouts 6.8
 import "./Components"
 
 Item {
-    property real scaleFactor: parent ? Math.min(parent.width / 1280, parent.height / 720) : 1.0
+    property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
     property real topControlButtonSize: 80
     property real topControlIconSize: 40
     property real topControlSpacing: 25
     property real topControlMargin: 15
-    property real formFieldHeight: 50
-    property real formFieldFontSize: 20
-    property real formSpacing: 15
-    property real formMargin: 25
-    property real formWidth: 350
+    property real formFieldHeight: 55
+    property real formFieldFontSize: 22
+    property real formSpacing: 18
+    property real formMargin: 28
+    property real formWidth: 385
+    property real formHeight: 586
 
     Rectangle {
         anchors.fill: parent
         color: "#ffffff"
 
-        ColumnLayout {
+        Rectangle {
             anchors.centerIn: parent
             width: formWidth * scaleFactor
-            spacing: formSpacing * scaleFactor
+            height: formHeight * scaleFactor // Chiều cao cố định, khớp với LoginView
+            radius: 30 * scaleFactor
+            border.color: "#e0e0e0"
+            border.width: 2 * scaleFactor
+            color: "#ffffff"
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: topControlMargin * scaleFactor
-                spacing: topControlSpacing * scaleFactor
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: formWidth * scaleFactor - 20 * scaleFactor
+                spacing: formSpacing * scaleFactor
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: topControlMargin * scaleFactor
+                    spacing: topControlSpacing * scaleFactor
+
+                    HoverButton {
+                        Layout.preferredWidth: topControlButtonSize * scaleFactor
+                        Layout.preferredHeight: topControlButtonSize * scaleFactor
+                        flat: true
+                        onClicked: {
+                            NavigationManager.goBack();
+                            console.log("Back button clicked");
+                        }
+                        Image {
+                            source: "qrc:/Assets/back.png"
+                            width: topControlIconSize * scaleFactor
+                            height: topControlIconSize * scaleFactor
+                            anchors.centerIn: parent
+                        }
+                    }
+
+                    Text {
+                        text: "Register"
+                        font.pixelSize: 34 * scaleFactor
+                        font.bold: true
+                        color: "#000000"
+                        Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    radius: 25 * scaleFactor
+                    color: "#e0e0e0"
+
+                    TextField {
+                        id: emailField
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        font.pixelSize: formFieldFontSize * scaleFactor
+                        color: "#333333"
+                        placeholderText: "Email"
+                        placeholderTextColor: "#666666"
+                        verticalAlignment: Text.AlignVCenter
+                        background: null
+                        onFocusChanged: {
+                            console.log("Email field focus:", focus);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    radius: 25 * scaleFactor
+                    color: "#e0e0e0"
+
+                    TextField {
+                        id: nameField
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        font.pixelSize: formFieldFontSize * scaleFactor
+                        color: "#333333"
+                        placeholderText: "Full Name"
+                        placeholderTextColor: "#666666"
+                        verticalAlignment: Text.AlignVCenter
+                        background: null
+                        onFocusChanged: {
+                            console.log("Name field focus:", focus);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    radius: 25 * scaleFactor
+                    color: "#e0e0e0"
+
+                    TextField {
+                        id: dobField
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        font.pixelSize: formFieldFontSize * scaleFactor
+                        color: "#333333"
+                        placeholderText: "Date of Birth (YYYY-MM-DD)"
+                        placeholderTextColor: "#666666"
+                        verticalAlignment: Text.AlignVCenter
+                        background: null
+                        validator: RegularExpressionValidator {
+                            regularExpression: /\d{4}-\d{2}-\d{2}/
+                        }
+                        onFocusChanged: {
+                            console.log("Date of Birth field focus:", focus);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    radius: 25 * scaleFactor
+                    color: "#e0e0e0"
+
+                    TextField {
+                        id: passwordField
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        font.pixelSize: formFieldFontSize * scaleFactor
+                        color: "#333333"
+                        placeholderText: "Password"
+                        placeholderTextColor: "#666666"
+                        verticalAlignment: Text.AlignVCenter
+                        echoMode: TextInput.Password
+                        background: null
+                        onFocusChanged: {
+                            console.log("Password field focus:", focus);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    radius: 25 * scaleFactor
+                    color: "#e0e0e0"
+
+                    TextField {
+                        id: confirmPasswordField
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        font.pixelSize: formFieldFontSize * scaleFactor
+                        color: "#333333"
+                        placeholderText: "Confirm Password"
+                        placeholderTextColor: "#666666"
+                        verticalAlignment: Text.AlignVCenter
+                        echoMode: TextInput.Password
+                        background: null
+                        onFocusChanged: {
+                            console.log("Confirm Password field focus:", focus);
+                        }
+                    }
+                }
 
                 HoverButton {
-                    Layout.preferredWidth: topControlButtonSize * scaleFactor
-                    Layout.preferredHeight: topControlButtonSize * scaleFactor
-                    flat: true
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    text: "Register"
+                    defaultColor: "#212121"
+                    hoverColor: "#424242"
+                    radius: 30 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
                     onClicked: {
-                        NavigationManager.goBack();
-                        console.log("Back button clicked");
+                        if (passwordField.text === confirmPasswordField.text) {
+                            authViewModel.registerUser(emailField.text, passwordField.text, nameField.text, dobField.text);
+                            console.log("Register button clicked, email:", emailField.text);
+                        } else {
+                            notificationPopup.message = "Passwords do not match";
+                            notificationPopup.color = "#F44336";
+                            notificationPopup.open();
+                        }
                     }
-                    Image {
-                        source: "qrc:/Assets/back.png"
-                        width: topControlIconSize * scaleFactor
-                        height: topControlIconSize * scaleFactor
-                        anchors.centerIn: parent
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
                 }
 
                 Text {
-                    text: "Register"
-                    font.pixelSize: 36 * scaleFactor
-                    font.bold: true
-                    color: "#000000"
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
-
-                TextField {
-                    id: emailField
-                    anchors.fill: parent
-                    anchors.margins: 8 * scaleFactor
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
-                    placeholderText: "Email"
-                    placeholderTextColor: "#666666"
-                    verticalAlignment: Text.AlignVCenter
-                    background: null
-                    onFocusChanged: {
-                        console.log("Email field focus:", focus);
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
-
-                TextField {
-                    id: nameField
-                    anchors.fill: parent
-                    anchors.margins: 8 * scaleFactor
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
-                    placeholderText: "Full Name"
-                    placeholderTextColor: "#666666"
-                    verticalAlignment: Text.AlignVCenter
-                    background: null
-                    onFocusChanged: {
-                        console.log("Name field focus:", focus);
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
-
-                TextField {
-                    id: dobField
-                    anchors.fill: parent
-                    anchors.margins: 8 * scaleFactor
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
-                    placeholderText: "Date of Birth (YYYY-MM-DD)"
-                    placeholderTextColor: "#666666"
-                    verticalAlignment: Text.AlignVCenter
-                    background: null
-                    validator: RegularExpressionValidator {
-                        regularExpression: /\d{4}-\d{2}-\d{2}/
-                    } // Validate YYYY-MM-DD format
-                    onFocusChanged: {
-                        console.log("Date of Birth field focus:", focus);
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
-
-                TextField {
-                    id: passwordField
-                    anchors.fill: parent
-                    anchors.margins: 8 * scaleFactor
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
-                    placeholderText: "Password"
-                    placeholderTextColor: "#666666"
-                    verticalAlignment: Text.AlignVCenter
-                    echoMode: TextInput.Password
-                    background: null
-                    onFocusChanged: {
-                        console.log("Password field focus:", focus);
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
-
-                TextField {
-                    id: confirmPasswordField
-                    anchors.fill: parent
-                    anchors.margins: 8 * scaleFactor
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
-                    placeholderText: "Confirm Password"
-                    placeholderTextColor: "#666666"
-                    verticalAlignment: Text.AlignVCenter
-                    echoMode: TextInput.Password
-                    background: null
-                    onFocusChanged: {
-                        console.log("Confirm Password field focus:", focus);
-                    }
-                }
-            }
-
-            HoverButton {
-                Layout.fillWidth: true
-                Layout.preferredHeight: formFieldHeight * scaleFactor
-                text: "Register"
-                onClicked: {
-                    if (passwordField.text === confirmPasswordField.text) {
-                        authViewModel.registerUser(emailField.text, passwordField.text, nameField.text, dobField.text);
-                        console.log("Register button clicked, email:", emailField.text);
-                    } else {
-                        notificationPopup.message = "Passwords do not match";
-                        notificationPopup.color = "#F44336";
-                        notificationPopup.open();
-                    }
-                }
-                background: Rectangle {
-                    color: parent.hovered ? "#005BB5" : "#0078D7" // Xanh đậm khi hover, xanh dương khi bình thường
-                    radius: 30 * scaleFactor
-                }
-                contentItem: Text {
-                    text: parent.text
-                    color: "#FFFFFF" // Chữ trắng
-                    font.pixelSize: formFieldFontSize * scaleFactor
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            Text {
-                text: "Already have an account? Login"
-                font.pixelSize: 14 * scaleFactor
-                color: "#0078D7"
-                Layout.alignment: Qt.AlignHCenter
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onEntered: parent.color = "#005BB5"
-                    onExited: parent.color = "#0078D7"
-                    onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
-                        console.log("Navigate to LoginView");
+                    text: "Already have an account? Login"
+                    font.pixelSize: 15 * scaleFactor
+                    color: "#212121"
+                    Layout.alignment: Qt.AlignHCenter
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onEntered: {
+                            parent.color = "#757575";
+                            parent.font.underline = true;
+                        }
+                        onExited: {
+                            parent.color = "#212121";
+                            parent.font.underline = false;
+                        }
+                        onClicked: {
+                            NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
+                            console.log("Navigate to LoginView");
+                        }
                     }
                 }
             }

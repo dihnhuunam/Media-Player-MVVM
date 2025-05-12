@@ -5,10 +5,10 @@ import QtQuick.Layouts
 
 ApplicationWindow {
     id: root
-    width: 1024
-    height: 600
-    minimumWidth: 800
-    minimumHeight: 500
+    width: 1920
+    height: 1200
+    minimumWidth: 1400
+    minimumHeight: 900
     visible: true
     title: "Media Player"
 
