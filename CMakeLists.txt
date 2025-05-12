@@ -16,23 +16,3 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     lViewModel
 )
-
-# list(APPEND CMAKE_PREFIX_PATH "/home/dihnhuunam/Qt/6.8.2/gcc_64")
-# find_package(Qt6 
-#     REQUIRED 
-#     COMPONENTS 
-#         Core
-#         Quick 
-#         Multimedia 
-#         Qml
-#         Gui
-#         Network
-# )
-# target_link_libraries(${PROJECT_NAME} PUBLIC
-#     Qt6::Core
-#     Qt6::Quick
-#     Qt6::Multimedia
-#     Qt6::Qml
-#     Qt6::Gui
-#     Qt6::Network
-# )
