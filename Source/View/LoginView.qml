@@ -43,7 +43,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     color: notificationRect.notificationColor
-                    radius: 5
+                    radius: 15 * scaleFactor
                     visible: notificationRect.isVisible
 
                     property bool isVisible: false
