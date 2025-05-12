@@ -8,7 +8,7 @@
 AuthModel::AuthModel(QObject *parent)
     : QObject(parent),
       m_networkManager(new QNetworkAccessManager(this)),
-      m_settings(new QSettings("MyApp", "Auth", this))
+      m_settings(new QSettings("MediaPlayer", "Auth", this))
 {
 }
 
