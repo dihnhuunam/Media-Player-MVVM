@@ -25,12 +25,12 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
     const SongData &song = m_songs[index.row()];
     switch (role)
     {
-    case IdRole:
+    case Id_ROLE:
         return song.id;
     case TitleRole:
         return song.title;
     case ArtistsRole:
-        return song.artists; // Trả về QStringList
+        return song.artists;
     case FilePathRole:
         return song.filePath;
     case GenresRole:
@@ -43,9 +43,9 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> SongModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[IdRole] = "id";
+    roles[Id_ROLE] = "id";
     roles[TitleRole] = "title";
-    roles[ArtistsRole] = "artists"; // Đổi từ "artist" thành "artists"
+    roles[ArtistsRole] = "artists";
     roles[FilePathRole] = "filePath";
     roles[GenresRole] = "genres";
     return roles;
@@ -67,10 +67,15 @@ void SongModel::searchSongs(const QString &query)
     {
         beginResetModel();
         m_songs.clear();
+        m_isLoading = false;
         endResetModel();
         emit songsChanged();
+        emit isLoadingChanged();
         return;
     }
+
+    m_isLoading = true;
+    emit isLoadingChanged();
 
     QUrl url(m_baseUrl + "/api/songs/search");
     QUrlQuery urlQuery;
@@ -91,6 +96,9 @@ QString SongModel::getStreamUrl(int songId) const
 
 void SongModel::handleSearchReply(QNetworkReply *reply)
 {
+    m_isLoading = false;
+    emit isLoadingChanged();
+
     if (reply->error() != QNetworkReply::NoError)
     {
         emit errorOccurred(reply->errorString());
@@ -100,6 +108,8 @@ void SongModel::handleSearchReply(QNetworkReply *reply)
     }
 
     QByteArray data = reply->readAll();
+    qDebug() << "SongModel: Raw API response:" << data;
+
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (doc.isNull() || !doc.isArray())
     {
@@ -121,14 +131,12 @@ void SongModel::handleSearchReply(QNetworkReply *reply)
         song.title = obj["title"].toString();
         song.filePath = obj["file_path"].toString();
 
-        // Parse artists array
         QJsonArray artistsArray = obj["artists"].toArray();
         for (const QJsonValue &artist : artistsArray)
         {
             song.artists.append(artist.toString());
         }
 
-        // Parse genres array
         QJsonArray genresArray = obj["genres"].toArray();
         for (const QJsonValue &genre : genresArray)
         {

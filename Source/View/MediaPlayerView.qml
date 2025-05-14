@@ -17,6 +17,7 @@ Item {
     property int repeatMode: 0 // 0: none, 1: repeat all, 2: repeat one
     property bool muted: false
     property real previousVolume: 0.5
+    property bool isSearching: false // Trạng thái tìm kiếm
 
     // Scale Factor
     readonly property real scaleFactor: Math.min(parent.width / 1024, parent.height / 600)
@@ -151,7 +152,7 @@ Item {
                         anchors.fill: parent
                         onClicked: {
                             searchInput.forceActiveFocus();
-                            if (searchInput.text !== "Search" && songViewModel && songViewModel.songModel.count > 0) {
+                            if (searchInput.text !== "Search" && songViewModel) {
                                 searchResultsView.visible = true;
                             }
                             console.log("Search bar clicked");
@@ -183,7 +184,7 @@ Item {
                                 if (activeFocus && text === "Search") {
                                     text = "";
                                 }
-                                if (activeFocus && text !== "" && songViewModel && songViewModel.songModel.count > 0) {
+                                if (activeFocus && text !== "" && songViewModel) {
                                     searchResultsView.visible = true;
                                     console.log("Search bar focused, showing results for:", text);
                                 } else if (!activeFocus) {
@@ -191,12 +192,21 @@ Item {
                                         text = "Search";
                                     }
                                     searchResultsView.visible = false;
+                                    isSearching = false;
                                     console.log("Search bar lost focus");
                                 }
                             }
                             onTextChanged: {
-                                if (text !== "Search" && songViewModel) {
+                                if (text !== "Search" && text.length >= 1 && songViewModel) {
+                                    isSearching = true;
+                                    searchResultsView.visible = true;
                                     songViewModel.search(text);
+                                    console.log("Search query changed, executing search for:", text);
+                                } else {
+                                    isSearching = false;
+                                    searchResultsView.visible = false;
+                                    songViewModel.search("");
+                                    console.log("Search cleared");
                                 }
                             }
                             onAccepted: {
@@ -204,6 +214,7 @@ Item {
                                     songViewModel.playSong(songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.IdRole), songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.TitleRole), songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.ArtistsRole));
                                     searchResultsView.visible = false;
                                     searchInput.focus = false;
+                                    isSearching = false;
                                     console.log("Selected first result");
                                 }
                             }
@@ -297,44 +308,95 @@ Item {
                 model: songViewModel ? songViewModel.songModel : null
                 z: 2
 
-                delegate: Rectangle {
-                    width: searchResultsView.width
-                    height: searchResultItemHeight * scaleFactor
-                    color: mouseArea.containsMouse ? "#f0f0f0" : "#ffffff"
-                    border.color: "#e0e0e0"
-                    border.width: 1
-
-                    Text {
-                        anchors.fill: parent
-                        anchors.margins: searchResultMargin * scaleFactor
-                        text: {
-                            let artistsStr = artists.join(", ");
-                            console.log("Search Result - Title:", title, "Artists:", artistsStr);
-                            return title + " - " + artistsStr;
+                Loader {
+                    anchors.fill: parent
+                    sourceComponent: {
+                        if (songViewModel && songViewModel.songModel.isLoading) {
+                            return loadingComponent;
+                        } else if (songViewModel && songViewModel.songModel.count === 0 && isSearching) {
+                            return noResultsComponent;
+                        } else {
+                            return songListComponent;
                         }
-                        font.pixelSize: searchResultFontSize * scaleFactor
-                        color: "#333333"
-                        verticalAlignment: Text.AlignVCenter
-                        elide: Text.ElideRight
                     }
+                }
 
-                    MouseArea {
-                        id: mouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onEntered: {
-                            parent.color = "#f0f0f0";
-                        }
-                        onExited: {
-                            parent.color = "#ffffff";
-                        }
-                        onClicked: {
-                            if (songViewModel) {
-                                songViewModel.playSong(id, title, artists);
-                                searchResultsView.visible = false;
-                                searchInput.focus = false;
-                                console.log("Selected search result, title:", title, "artists:", artists.join(", "));
+                Component {
+                    id: songListComponent
+                    ListView {
+                        model: searchResultsView.model
+                        width: searchResultsView.width
+                        height: searchResultsView.height
+                        clip: true
+                        interactive: true
+
+                        delegate: Rectangle {
+                            width: searchResultsView.width
+                            height: searchResultItemHeight * scaleFactor
+                            color: mouseArea.containsMouse ? "#f0f0f0" : "#ffffff"
+                            border.color: "#e0e0e0"
+                            border.width: 1
+
+                            Text {
+                                anchors.fill: parent
+                                anchors.margins: searchResultMargin * scaleFactor
+                                text: {
+                                    let artistsStr = model.artists.join(", ");
+                                    console.log("Search Result - Title:", model.title, "Artists:", artistsStr);
+                                    return model.title + " - " + artistsStr;
+                                }
+                                font.pixelSize: searchResultFontSize * scaleFactor
+                                color: "#333333"
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
                             }
+
+                            MouseArea {
+                                id: mouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onEntered: {
+                                    parent.color = "#f0f0f0";
+                                }
+                                onExited: {
+                                    parent.color = "#ffffff";
+                                }
+                                onClicked: {
+                                    if (songViewModel) {
+                                        songViewModel.playSong(model.id, model.title, model.artists);
+                                        searchResultsView.visible = false;
+                                        searchInput.focus = false;
+                                        isSearching = false;
+                                        console.log("Selected search result, title:", model.title, "artists:", model.artists.join(", "));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: loadingComponent
+                    Rectangle {
+                        color: "#f0f0f0"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Đang tìm kiếm..."
+                            font.pixelSize: searchResultFontSize * scaleFactor
+                            color: "#666666"
+                        }
+                    }
+                }
+
+                Component {
+                    id: noResultsComponent
+                    Rectangle {
+                        color: "#f0f0f0"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Không tìm thấy bài hát"
+                            font.pixelSize: searchResultFontSize * scaleFactor
+                            color: "#666666"
                         }
                     }
                 }
@@ -353,10 +415,14 @@ Item {
 
                 onVisibleChanged: {
                     opacity = visible ? 1.0 : 0.5;
+                    console.log("SearchResultsView visibility changed:", visible);
                 }
 
                 onModelChanged: {
                     console.log("Search results updated, count:", songViewModel ? songViewModel.songModel.count : 0);
+                    if (songViewModel && songViewModel.songModel.count > 0 && isSearching) {
+                        searchResultsView.visible = true;
+                    }
                 }
             }
         }
@@ -370,9 +436,7 @@ Item {
             spacing: songInfoSpacing * scaleFactor
             width: parent.width * 0.8
             z: 1
-            // Ẩn khi chưa có bài nhạc được chọn
             visible: title !== "No Song"
-            // Hiệu ứng chuyển đổi mượt mà
             Behavior on opacity {
                 NumberAnimation {
                     duration: 200
@@ -411,7 +475,7 @@ Item {
             }
         }
 
-        // 4. Player Controls (Time, Progress, Control Buttons, Volume)
+        // 4. Player Controls
         ColumnLayout {
             id: playerControlsLayout
             anchors.horizontalCenter: parent.horizontalCenter
@@ -570,9 +634,9 @@ Item {
                             muted = !muted;
                             if (muted) {
                                 previousVolume = songViewModel.volume;
-                                songViewModel.setVolume(0);
+                                songViewModel.volume = 0;
                             } else {
-                                songViewModel.setVolume(previousVolume);
+                                songViewModel.volume = previousVolume;
                             }
                             console.log("Volume Button Clicked, muted:", muted, "volume:", songViewModel.volume);
                         }
@@ -600,7 +664,7 @@ Item {
                     borderColor: "#000000"
                     onValueChanged: {
                         if (songViewModel) {
-                            songViewModel.setVolume(value);
+                            songViewModel.volume = value;
                             muted = (value === 0);
                             if (!muted) {
                                 previousVolume = value;
@@ -613,13 +677,15 @@ Item {
         }
 
         MouseArea {
+            id: mouseArea
             anchors.fill: parent
             z: 0
             propagateComposedEvents: true
             onPressed: function (mouse) {
-                if (!searchResultsView.contains(Qt.point(mouse.x - searchResultsView.x, mouse.y - searchResultsView.y)) && !searchInput.contains(Qt.point(mouse.x - searchInput.x, mouse.y - searchInput.y))) {
+                if (!searchResultsView.contains(searchResultsView.mapFromItem(mouseArea, mouse.x, mouse.y)) && !searchInput.contains(searchInput.mapFromItem(mouseArea, mouse.x, mouse.y))) {
                     searchInput.focus = false;
                     searchResultsView.visible = false;
+                    isSearching = false;
                     console.log("Focus removed from search bar, text:", searchInput.text);
                 }
                 mouse.accepted = false;
