@@ -24,9 +24,6 @@ Item {
     property real playlistItemMargin: 30
     property real playlistSpacing: 6
 
-    // Sample playlist data (replace with controller later)
-    property var playlistNames: ["Playlist 1", "Playlist 2", "Playlist 3"]
-
     Rectangle {
         anchors.fill: parent
         color: "#ffffff"
@@ -126,7 +123,13 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        addPlaylistPopup.open();
+                        if (playlistViewModel.isAuthenticated) {
+                            addPlaylistPopup.open();
+                        } else {
+                            notificationPopup.text = "Please login to create a playlist";
+                            notificationPopup.color = "#F44336";
+                            notificationPopup.open();
+                        }
                     }
                     Image {
                         source: "qrc:/Assets/add.png"
@@ -150,7 +153,7 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 clip: true
                 interactive: true
-                model: playlistNames
+                model: playlistViewModel.playlistModel
                 cacheBuffer: 2000
                 maximumFlickVelocity: 4000
                 flickDeceleration: 1500
@@ -175,7 +178,7 @@ Item {
 
                         // Playlist Name
                         Text {
-                            text: modelData
+                            text: model.name
                             font.pixelSize: playlistItemFontSize * scaleFactor
                             color: "#333333"
                             Layout.fillWidth: true
@@ -183,22 +186,12 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
+                                    playlistViewModel.loadSongsInPlaylist(model.id);
                                     NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml", {
-                                        playlistName: modelData,
-                                        mediaFiles: [
-                                            {
-                                                title: "Sample Song 1",
-                                                artist: "Artist 1",
-                                                duration: 180000
-                                            },
-                                            {
-                                                title: "Sample Song 2",
-                                                artist: "Artist 2",
-                                                duration: 240000
-                                            }
-                                        ]
+                                        playlistId: model.id,
+                                        playlistName: model.name
                                     });
-                                    console.log("Clicked playlist:", modelData);
+                                    console.log("Clicked playlist:", model.name, "ID:", model.id);
                                 }
                             }
                         }
@@ -210,8 +203,10 @@ Item {
                             Layout.rightMargin: playlistItemMargin * scaleFactor
                             flat: true
                             onClicked: {
-                                popup.playlistName = modelData;
-                                renameField.text = modelData;
+                                popup.playlistId = model.id;
+                                popup.playlistName = model.name;
+                                renameField.text = model.name;
+                                descriptionField.text = model.description;
                                 popup.open();
                             }
                             Image {
@@ -223,6 +218,15 @@ Item {
                         }
                     }
                 }
+
+                // Placeholder when no playlists
+                Text {
+                    anchors.centerIn: parent
+                    text: "No playlists available"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    color: "#666666"
+                    visible: playlistView.count === 0
+                }
             }
         }
 
@@ -232,7 +236,7 @@ Item {
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
             width: 300 * scaleFactor
-            height: 150 * scaleFactor
+            height: 250 * scaleFactor
             modal: true
             focus: true
             background: Rectangle {
@@ -265,7 +269,28 @@ Item {
                         color: "#e0e0e0"
                         radius: 5
                     }
-                    onAccepted: addButton.clicked()
+                }
+
+                Text {
+                    text: "Enter Playlist Description (Optional)"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    color: "#000000"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                TextField {
+                    id: newPlaylistDescriptionField
+                    placeholderText: "Description"
+                    placeholderTextColor: "#666666"
+                    color: "#000000"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    Layout.fillWidth: true
+                    Layout.leftMargin: playlistItemMargin * scaleFactor
+                    Layout.rightMargin: playlistItemMargin * scaleFactor
+                    background: Rectangle {
+                        color: "#e0e0e0"
+                        radius: 5
+                    }
                 }
 
                 Button {
@@ -287,13 +312,46 @@ Item {
                     }
                     onClicked: {
                         var name = newPlaylistNameField.text.trim();
+                        var description = newPlaylistDescriptionField.text.trim();
                         if (name !== "") {
-                            console.log("Add playlist:", name);
+                            playlistViewModel.createNewPlaylist(name, description);
                             addPlaylistPopup.close();
                             newPlaylistNameField.text = "";
+                            newPlaylistDescriptionField.text = "";
                         }
                     }
                 }
+            }
+        }
+
+        // Notification Popup
+        Popup {
+            id: notificationPopup
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: 300 * scaleFactor
+            height: 100 * scaleFactor
+            modal: true
+            focus: true
+            property string text: ""
+            property color color: "#4CAF50"
+
+            background: Rectangle {
+                color: notificationPopup.color
+                radius: 5
+            }
+
+            Text {
+                anchors.centerIn: parent
+                text: notificationPopup.text
+                font.pixelSize: playlistItemFontSize * scaleFactor
+                color: "#FFFFFF"
+            }
+
+            Timer {
+                interval: 2000
+                running: notificationPopup.visible
+                onTriggered: notificationPopup.close()
             }
         }
 
@@ -303,7 +361,7 @@ Item {
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
             width: 300 * scaleFactor
-            height: 200 * scaleFactor
+            height: 250 * scaleFactor
             modal: true
             focus: true
             background: Rectangle {
@@ -312,6 +370,7 @@ Item {
                 radius: 5
             }
 
+            property int playlistId: 0
             property string playlistName: ""
 
             ColumnLayout {
@@ -325,9 +384,38 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
+                Text {
+                    text: "New Name"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    color: "#000000"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
                 TextField {
                     id: renameField
                     placeholderText: "New playlist name"
+                    placeholderTextColor: "#666666"
+                    color: "#000000"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    Layout.fillWidth: true
+                    Layout.leftMargin: playlistItemMargin * scaleFactor
+                    Layout.rightMargin: playlistItemMargin * scaleFactor
+                    background: Rectangle {
+                        color: "#e0e0e0"
+                        radius: 5
+                    }
+                }
+
+                Text {
+                    text: "New Description (Optional)"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    color: "#000000"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                TextField {
+                    id: descriptionField
+                    placeholderText: "Description"
                     placeholderTextColor: "#666666"
                     color: "#000000"
                     font.pixelSize: playlistItemFontSize * scaleFactor
@@ -357,10 +445,17 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        var newName = renameField.text.trim();
-                        if (newName !== "" && newName !== popup.playlistName) {
-                            console.log("Rename playlist from", popup.playlistName, "to", newName);
-                            popup.close();
+                        if (playlistViewModel.isAuthenticated) {
+                            var newName = renameField.text.trim();
+                            var newDescription = descriptionField.text.trim();
+                            if (newName !== "" && newName !== popup.playlistName) {
+                                playlistViewModel.updatePlaylist(popup.playlistId, newName, newDescription);
+                                popup.close();
+                            }
+                        } else {
+                            notificationPopup.text = "Please login to rename a playlist";
+                            notificationPopup.color = "#F44336";
+                            notificationPopup.open();
                         }
                     }
                 }
@@ -382,11 +477,56 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        console.log("Delete playlist:", popup.playlistName);
-                        popup.close();
+                        if (playlistViewModel.isAuthenticated) {
+                            playlistViewModel.deletePlaylist(popup.playlistId);
+                            popup.close();
+                        } else {
+                            notificationPopup.text = "Please login to delete a playlist";
+                            notificationPopup.color = "#F44336";
+                            notificationPopup.open();
+                        }
                     }
                 }
             }
         }
+
+        // Connections to PlaylistViewModel
+        Connections {
+            target: playlistViewModel
+            function onErrorOccurred(error) { // Sử dụng tín hiệu errorOccurred
+                notificationPopup.text = error;
+                notificationPopup.color = "#F44336";
+                notificationPopup.open();
+            }
+
+            function onPlaylistCreated(playlistId) {
+                notificationPopup.text = "Playlist created successfully (ID: " + playlistId + ")";
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+            }
+
+            function onPlaylistUpdated(playlistId) {
+                notificationPopup.text = "Playlist updated successfully (ID: " + playlistId + ")";
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+            }
+
+            function onPlaylistDeleted(playlistId) {
+                notificationPopup.text = "Playlist deleted successfully (ID: " + playlistId + ")";
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (playlistViewModel.isAuthenticated) {
+            playlistViewModel.loadPlaylists();
+        } else {
+            notificationPopup.text = "Please login to load playlists";
+            notificationPopup.color = "#F44336";
+            notificationPopup.open();
+        }
+        console.log("PlaylistView: Component completed at", new Date().toLocaleString(Qt.locale(), "hh:mm AP"));
     }
 }

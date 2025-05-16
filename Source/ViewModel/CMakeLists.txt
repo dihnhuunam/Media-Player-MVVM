@@ -1,6 +1,7 @@
 add_library(lViewModel SHARED
     AuthViewModel.cpp
     SongViewModel.cpp
+    PlaylistViewModel.cpp
 )
 
 target_include_directories(lViewModel PUBLIC
