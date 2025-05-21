@@ -19,8 +19,8 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
     const QMap<int, QVariant> &song = m_songs[index.row()];
     switch (role)
     {
-    case Id_ROLE:
-        return song[Id_ROLE];
+    case IdRole:
+        return song[IdRole];
     case TitleRole:
         return song[TitleRole];
     case ArtistsRole:
@@ -37,7 +37,7 @@ QVariant SongModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> SongModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[Id_ROLE] = "id";
+    roles[IdRole] = "id";
     roles[TitleRole] = "title";
     roles[ArtistsRole] = "artists";
     roles[FilePathRole] = "filePath";
@@ -90,7 +90,7 @@ void SongModel::onSearchReply()
             {
                 QJsonObject obj = value.toObject();
                 QMap<int, QVariant> song;
-                song[Id_ROLE] = obj["id"].toInt();
+                song[IdRole] = obj["id"].toInt();
                 song[TitleRole] = obj["title"].toString();
                 song[ArtistsRole] = obj["artists"].toVariant().toStringList();
                 song[FilePathRole] = obj["file_path"].toString();

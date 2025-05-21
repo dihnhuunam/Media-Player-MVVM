@@ -19,7 +19,7 @@ Item {
         Rectangle {
             anchors.centerIn: parent
             width: formWidth * scaleFactor
-            height: formHeight * scaleFactor // Chiều cao cố định, khớp với RegisterView
+            height: formHeight * scaleFactor 
             radius: 30 * scaleFactor
             border.color: "#e0e0e0"
             border.width: 2 * scaleFactor

@@ -29,7 +29,7 @@ public:
 
     enum SongRoles
     {
-        Id_ROLE = Qt::UserRole + 1,
+        IdRole = Qt::UserRole + 1,
         TitleRole,
         ArtistsRole,
         FilePathRole,
@@ -59,8 +59,8 @@ private slots:
 
 private:
     QString m_query;
-    QList<QMap<int, QVariant>> m_songs;      // Sửa thành QList<QMap<int, QVariant>> để khớp với .cpp
-    QNetworkAccessManager *m_networkManager; // Sửa thành pointer để khớp với .cpp
+    QList<QMap<int, QVariant>> m_songs;     
+    QNetworkAccessManager *m_networkManager; 
     bool m_isLoading = false;
 };
 
