@@ -204,42 +204,73 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
     {
         QByteArray responseData = reply->readAll();
         QJsonDocument doc = QJsonDocument::fromJson(responseData);
+        QString endpoint = reply->url().path();
+
         if (doc.isArray())
         {
-            QJsonArray jsonArray = doc.array();
-            beginResetModel();
-            m_playlists.clear();
-            for (const QJsonValue &value : jsonArray)
+            if (endpoint.contains("/playlists") && !endpoint.contains("/songs"))
             {
-                QJsonObject obj = value.toObject();
-                PlaylistData playlist;
-                playlist.id = obj["id"].toInt();
-                playlist.name = obj["name"].toString();
-                playlist.songs.clear(); // Không tải songs trực tiếp, cần loadSongsInPlaylist
-                playlist.imageUrl = obj["imageUrl"].toString();
-                playlist.userId = obj["userId"].toInt();
-                m_playlists.append(playlist);
+                // Xử lý danh sách playlists
+                QJsonArray jsonArray = doc.array();
+                beginResetModel();
+                m_playlists.clear();
+                for (const QJsonValue &value : jsonArray)
+                {
+                    QJsonObject obj = value.toObject();
+                    PlaylistData playlist;
+                    playlist.id = obj["id"].toInt();
+                    playlist.name = obj["name"].toString();
+                    playlist.songs.clear();
+                    playlist.imageUrl = obj["imageUrl"].toString("");
+                    playlist.userId = obj["userId"].toInt();
+                    m_playlists.append(playlist);
+                }
+                endResetModel();
+                emit playlistsChanged();
             }
-            endResetModel();
-            emit playlistsChanged();
+            else if (endpoint.contains("/songs"))
+            {
+                // Xử lý danh sách bài hát trong playlist
+                QJsonArray jsonArray = doc.array();
+                QList<SongData> songs;
+                for (const QJsonValue &value : jsonArray)
+                {
+                    QJsonObject obj = value.toObject();
+                    SongData song;
+                    song.id = obj["id"].toInt();
+                    song.title = obj["title"].toString();
+                    QJsonArray artistsArray = obj["artists"].toArray();
+                    QStringList artists;
+                    for (const QJsonValue &artist : artistsArray)
+                    {
+                        artists.append(artist.toString());
+                    }
+                    song.artists = artists;
+                    song.filePath = obj["file_path"].toString();
+                    songs.append(song);
+                }
+                // Trích xuất playlistId từ URL
+                QStringList pathParts = endpoint.split('/');
+                int playlistId = pathParts[pathParts.size() - 2].toInt();
+                emit songsLoaded(playlistId, songs, "Songs loaded successfully");
+            }
         }
         else if (doc.isObject())
         {
             QJsonObject jsonObj = doc.object();
-            QString endpoint = reply->url().path();
-            if (endpoint.endsWith("/playlists"))
+            if (endpoint.endsWith("/playlists") && reply->operation() == QNetworkAccessManager::PostOperation)
             {
-                int playlistId = jsonObj["id"].toInt();
+                int playlistId = jsonObj["playlistId"].toInt();
                 emit playlistCreated(playlistId);
             }
             else if (endpoint.contains("/playlists/") && reply->operation() == QNetworkAccessManager::PutOperation)
             {
-                int playlistId = jsonObj["id"].toInt();
+                int playlistId = endpoint.split('/').last().toInt();
                 emit playlistUpdated(playlistId);
             }
             else if (endpoint.contains("/playlists/") && reply->operation() == QNetworkAccessManager::DeleteOperation)
             {
-                int playlistId = jsonObj["id"].toInt();
+                int playlistId = endpoint.split('/').last().toInt();
                 emit playlistDeleted(playlistId);
             }
             else if (endpoint.endsWith("/playlists/songs"))
@@ -249,26 +280,8 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
             }
             else if (endpoint.contains("/songs/") && reply->operation() == QNetworkAccessManager::DeleteOperation)
             {
-                int playlistId = jsonObj["playlistId"].toInt();
+                int playlistId = endpoint.split('/')[endpoint.split('/').size() - 3].toInt();
                 emit songRemoved(playlistId);
-            }
-            else if (endpoint.contains("/songs"))
-            {
-                QJsonArray jsonArray = jsonObj["songs"].toArray();
-                QList<SongData> songs;
-                for (const QJsonValue &value : jsonArray)
-                {
-                    QJsonObject obj = value.toObject();
-                    SongData song;
-                    song.id = obj["id"].toInt();
-                    song.title = obj["title"].toString();
-                    song.artists = obj["artists"].toVariant().toStringList();
-                    song.filePath = obj["file_path"].toString();
-                    song.genres = obj["genres"].toVariant().toStringList();
-                    songs.append(song);
-                }
-                int playlistId = 0; // Cần lấy từ URL hoặc response
-                emit songsLoaded(playlistId, songs, "Songs loaded successfully");
             }
         }
     }

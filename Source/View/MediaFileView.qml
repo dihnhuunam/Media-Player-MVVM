@@ -31,19 +31,20 @@ Item {
     FileDialog {
         id: fileDialog
         title: "Select Music Files"
-        nameFilters: ["Media files (*.mp3 *.wav *.m4a)"]
+        nameFilters: ["Music files (*.mp3 *.wav *.m4a)"]
         fileMode: FileDialog.OpenFiles
         onAccepted: {
             console.log("Selected files:", fileDialog.selectedFiles);
             let newFiles = [];
             for (let i = 0; i < fileDialog.selectedFiles.length; i++) {
+                // Assume songId will be assigned by the server, temporarily set to 0
+                let songId = 0;
+                playlistViewModel.addSongToPlaylist(AppState.currentPlaylistId, songId);
                 newFiles.push({
-                    id: 0 // Giá trị tạm thời, có thể cần API để tạo ID
-                    ,
+                    id: songId,
                     title: fileDialog.selectedFiles[i].split('/').pop(),
                     artists: ["Unknown Artist"],
-                    file_path: fileDialog.selectedFiles[i],
-                    uploaded_at: new Date().toISOString()
+                    file_path: fileDialog.selectedFiles[i]
                 });
             }
             AppState.setState({
@@ -59,16 +60,6 @@ Item {
         let startIndex = currentPage * itemsPerPage;
         let endIndex = Math.min(startIndex + itemsPerPage, AppState.currentMediaFiles.length);
         return AppState.currentMediaFiles.slice(startIndex, endIndex);
-    }
-
-    function formatDuration(milliseconds) {
-        if (!milliseconds || milliseconds < 0 || isNaN(milliseconds)) {
-            return "0:00";
-        }
-        let seconds = Math.floor(milliseconds / 1000);
-        let minutes = Math.floor(seconds / 60);
-        let secs = Math.floor(seconds % 60);
-        return minutes + ":" + (secs < 10 ? "0" : "") + secs;
     }
 
     Timer {
@@ -201,7 +192,7 @@ Item {
                     flat: true
                     onClicked: {
                         fileDialog.open();
-                        console.log("Add media clicked");
+                        console.log("Add song button clicked");
                     }
                     Image {
                         source: "qrc:/Assets/add.png"
@@ -272,23 +263,36 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
+                                        // Update AppState
                                         AppState.setState({
                                             title: modelData.title,
                                             artist: modelData.artists ? modelData.artists.join(", ") : "Unknown Artist",
+                                            filePath: modelData.file_path,
                                             playlistId: AppState.currentPlaylistId
                                         });
+                                        // Play the song using SongViewModel
+                                        songViewModel.playSong(modelData.id, modelData.title, modelData.artists);
+                                        // Navigate to MediaPlayerView
                                         NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
-                                        console.log("Selected media:", modelData.title, "Artists:", modelData.artists.join(", "), "Navigated to MediaPlayerView");
+                                        console.log("Selected song:", modelData.title, "Artists:", modelData.artists.join(", "), "Playing and navigated to MediaPlayerView");
                                     }
                                 }
                             }
 
-                            Text {
-                                text: "N/A" // API không cung cấp duration
-                                font.pixelSize: mediaItemFontSize * scaleFactor
-                                color: "#666666"
-                                Layout.rightMargin: mediaItemMargin * scaleFactor
-                                Layout.alignment: Qt.AlignVCenter
+                            HoverButton {
+                                Layout.preferredWidth: mediaItemHeight * scaleFactor
+                                Layout.preferredHeight: mediaItemHeight * scaleFactor
+                                flat: true
+                                onClicked: {
+                                    playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, modelData.id);
+                                    console.log("Removed song:", modelData.title, "from playlist ID:", AppState.currentPlaylistId);
+                                }
+                                Image {
+                                    source: "qrc:/Assets/delete.png"
+                                    width: mediaItemFontSize * scaleFactor
+                                    height: mediaItemFontSize * scaleFactor
+                                    anchors.centerIn: parent
+                                }
                             }
                         }
                     }
@@ -334,12 +338,12 @@ Item {
                         onClicked: {
                             currentPage--;
                             mediaFileView.model = getCurrentPageItems();
-                            console.log("Previous page, now:", currentPage + 1);
+                            console.log("Previous page, current:", currentPage + 1);
                         }
                     }
 
                     Text {
-                        text: totalPages > 0 ? ("Page " + (currentPage + 1) + " of " + totalPages) : "No Pages"
+                        text: totalPages > 0 ? ("Page " + (currentPage + 1) + " of " + totalPages) : "No pages"
                         font.pixelSize: mediaItemFontSize * scaleFactor
                         color: "#333333"
                     }
@@ -359,7 +363,7 @@ Item {
                         onClicked: {
                             currentPage++;
                             mediaFileView.model = getCurrentPageItems();
-                            console.log("Next page, now:", currentPage + 1);
+                            console.log("Next page, current:", currentPage + 1);
                         }
                     }
                 }
@@ -368,16 +372,59 @@ Item {
     }
 
     Connections {
-        target: AppState
-        function onCurrentMediaFilesChanged() {
-            currentPage = 0;
-            totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
-            mediaFileView.model = getCurrentPageItems();
-            console.log("MediaFileView: Media files updated, count:", AppState.currentMediaFiles.length, "from playlist ID:", AppState.currentPlaylistId);
+        target: playlistViewModel
+        function onSongsLoaded(playlistId, songs, message) {
+            if (playlistId === AppState.currentPlaylistId) {
+                AppState.setState({
+                    mediaFiles: songs
+                });
+                notificationPopup.text = message;
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+                console.log("MediaFileView: Loaded songs for playlist ID:", playlistId, "Count:", songs.length);
+            }
+        }
+
+        function onSongAddedToPlaylist(playlistId) {
+            if (playlistId === AppState.currentPlaylistId) {
+                playlistViewModel.loadSongsInPlaylist(playlistId);
+                notificationPopup.text = "Song added to playlist";
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+            }
+        }
+
+        function onSongRemovedFromPlaylist(playlistId) {
+            if (playlistId === AppState.currentPlaylistId) {
+                playlistViewModel.loadSongsInPlaylist(playlistId);
+                notificationPopup.text = "Song removed from playlist";
+                notificationPopup.color = "#4CAF50";
+                notificationPopup.open();
+            }
+        }
+
+        function onErrorOccurred(error) {
+            notificationPopup.text = error;
+            notificationPopup.color = "#F44336";
+            notificationPopup.open();
+            console.log("MediaFileView: Error:", error);
+        }
+    }
+
+    Connections {
+        target: songViewModel
+        function onErrorOccurred(error) {
+            notificationPopup.text = "Playback error: " + error;
+            notificationPopup.color = "#F44336";
+            notificationPopup.open();
+            console.log("MediaFileView: Song playback error:", error);
         }
     }
 
     Component.onCompleted: {
-        console.log("MediaFileView: Component completed, initial media files count:", AppState.currentMediaFiles.length);
+        console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles.length);
+        if (AppState.currentPlaylistId !== -1) {
+            playlistViewModel.loadSongsInPlaylist(AppState.currentPlaylistId);
+        }
     }
 }

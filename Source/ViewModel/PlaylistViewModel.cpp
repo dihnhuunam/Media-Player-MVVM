@@ -149,11 +149,22 @@ void PlaylistViewModel::onSongRemoved(int playlistId)
 {
     emit songRemovedFromPlaylist(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: Song removed from playlist, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: PlaylistViewModel: Song removed from playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onSongsLoaded(int playlistId, const QList<SongData> &songs, const QString &message)
 {
-    emit songsLoaded(playlistId, songs, message);
-    qDebug() << "PlaylistViewModel: Songs loaded for playlist" << playlistId << ", count:" << songs.count();
+    QVariantList songList;
+    for (const SongData &song : songs)
+    {
+        QVariantMap songMap;
+        songMap["id"] = song.id;
+        songMap["title"] = song.title;
+        songMap["artists"] = song.artists;
+        songMap["file_path"] = song.filePath;
+        songMap["genres"] = song.genres;
+        songList.append(songMap);
+    }
+    emit songsLoaded(playlistId, songList, message);
+    qDebug() << "PlaylistViewModel: Songs loaded for playlist" << playlistId << ", count:" << songList.count();
 }

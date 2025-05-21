@@ -36,7 +36,7 @@ signals:
     void playlistDeleted(int playlistId);
     void songAddedToPlaylist(int playlistId);
     void songRemovedFromPlaylist(int playlistId);
-    void songsLoaded(int playlistId, const QList<SongData> &songs, const QString &message);
+    void songsLoaded(int playlistId, const QVariantList &songs, const QString &message);
 
 private slots:
     void handleError(const QString &error);

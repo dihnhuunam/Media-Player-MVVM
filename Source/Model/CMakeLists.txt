@@ -2,7 +2,6 @@ add_library(lModel SHARED
     AuthModel.cpp
     SongModel.cpp
     PlaylistModel.cpp
-    AppState.cpp
 )
 
 target_include_directories(lModel PUBLIC
