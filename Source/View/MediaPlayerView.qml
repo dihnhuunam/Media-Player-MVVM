@@ -39,7 +39,7 @@ Item {
     property real searchResultMargin: 10
 
     property bool shuffle: false
-    property int repeatMode: 0
+    property int repeatMode: 0 // 0: No repeat, 1: Repeat one, 2: Repeat playlist
     property bool muted: false
     property real previousVolume: 0.5
     property bool isSearching: false
@@ -52,6 +52,117 @@ Item {
         let minutes = Math.floor(seconds / 60);
         let secs = Math.floor(seconds % 60);
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
+    }
+
+    // Hàm tìm chỉ số bài hát hiện tại trong danh sách playlist
+    function findCurrentSongIndex() {
+        if (AppState.currentMediaFiles.length === 0 || !AppState.currentMediaTitle) {
+            return -1;
+        }
+        for (let i = 0; i < AppState.currentMediaFiles.length; i++) {
+            let song = AppState.currentMediaFiles[i];
+            if (song.title === AppState.currentMediaTitle && song.artists.join(", ") === AppState.currentMediaArtist) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Hàm phát bài hát tại chỉ số cụ thể
+    function playSongAtIndex(index) {
+        if (index < 0 || index >= AppState.currentMediaFiles.length) {
+            console.log("Invalid song index:", index);
+            return;
+        }
+        let song = AppState.currentMediaFiles[index];
+        AppState.setState({
+            title: song.title,
+            artist: song.artists ? song.artists.join(", ") : "Unknown Artist",
+            filePath: song.file_path,
+            playlistId: AppState.currentPlaylistId
+        });
+        songViewModel.playSong(song.id, song.title, song.artists);
+        console.log("Playing song at index:", index, "Title:", song.title, "Artists:", song.artists.join(", "));
+    }
+
+    // Hàm xử lý nút Next
+    function handleNext() {
+        if (AppState.currentPlaylistId === -1 || AppState.currentMediaFiles.length === 0) {
+            console.log("No playlist or empty playlist, cannot go to next song");
+            return;
+        }
+
+        let currentIndex = findCurrentSongIndex();
+        if (currentIndex === -1) {
+            console.log("Current song not found in playlist");
+            return;
+        }
+
+        if (repeatMode === 1) {
+            // Repeat one: Phát lại bài hiện tại
+            playSongAtIndex(currentIndex);
+        } else {
+            let nextIndex;
+            if (shuffle) {
+                // Shuffle: Chọn ngẫu nhiên một bài khác
+                nextIndex = Math.floor(Math.random() * AppState.currentMediaFiles.length);
+                while (nextIndex === currentIndex && AppState.currentMediaFiles.length > 1) {
+                    nextIndex = Math.floor(Math.random() * AppState.currentMediaFiles.length);
+                }
+            } else {
+                // Không shuffle: Chuyển đến bài tiếp theo
+                nextIndex = currentIndex + 1;
+                if (nextIndex >= AppState.currentMediaFiles.length) {
+                    if (repeatMode === 2) {
+                        nextIndex = 0; // Repeat playlist: Quay lại đầu
+                    } else {
+                        console.log("Reached end of playlist, stopping");
+                        return;
+                    }
+                }
+            }
+            playSongAtIndex(nextIndex);
+        }
+    }
+
+    // Hàm xử lý nút Previous
+    function handlePrevious() {
+        if (AppState.currentPlaylistId === -1 || AppState.currentMediaFiles.length === 0) {
+            console.log("No playlist or empty playlist, cannot go to previous song");
+            return;
+        }
+
+        let currentIndex = findCurrentSongIndex();
+        if (currentIndex === -1) {
+            console.log("Current song not found in playlist");
+            return;
+        }
+
+        if (repeatMode === 1) {
+            // Repeat one: Phát lại bài hiện tại
+            playSongAtIndex(currentIndex);
+        } else {
+            let prevIndex;
+            if (shuffle) {
+                // Shuffle: Chọn ngẫu nhiên một bài khác
+                prevIndex = Math.floor(Math.random() * AppState.currentMediaFiles.length);
+                while (prevIndex === currentIndex && AppState.currentMediaFiles.length > 1) {
+                    prevIndex = Math.floor(Math.random() * AppState.currentMediaFiles.length);
+                }
+            } else {
+                // Không shuffle: Chuyển đến bài trước
+                prevIndex = currentIndex - 1;
+                if (prevIndex < 0) {
+                    if (repeatMode === 2) {
+                        prevIndex = AppState.currentMediaFiles.length - 1; // Repeat playlist: Quay lại cuối
+                    } else {
+                        console.log("Reached start of playlist, stopping");
+                        return;
+                    }
+                }
+            }
+            playSongAtIndex(prevIndex);
+        }
     }
 
     FolderDialog {
@@ -373,7 +484,7 @@ Item {
                         color: "#f0f0f0"
                         Text {
                             anchors.centerIn: parent
-                            text: "Đang tìm kiếm..."
+                            text: "Searching..."
                             font.pixelSize: searchResultFontSize * scaleFactor
                             color: "#666666"
                         }
@@ -386,7 +497,7 @@ Item {
                         color: "#f0f0f0"
                         Text {
                             anchors.centerIn: parent
-                            text: "Không tìm thấy bài hát"
+                            text: "No songs found"
                             font.pixelSize: searchResultFontSize * scaleFactor
                             color: "#666666"
                         }
@@ -543,6 +654,7 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
+                        handlePrevious();
                         console.log("Previous Button Clicked");
                     }
                     Image {
@@ -582,6 +694,7 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
+                        handleNext();
                         console.log("Next Button Clicked");
                     }
                     Image {
@@ -680,6 +793,14 @@ Item {
                 }
                 mouse.accepted = false;
             }
+        }
+    }
+
+    Connections {
+        target: songViewModel
+        function onErrorOccurred(error) {
+            console.log("MediaPlayerView: Playback error:", error);
+        // Có thể hiển thị thông báo lỗi nếu cần
         }
     }
 
