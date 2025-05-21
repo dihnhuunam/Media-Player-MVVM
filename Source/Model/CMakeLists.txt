@@ -2,6 +2,7 @@ add_library(lModel SHARED
     AuthModel.cpp
     SongModel.cpp
     PlaylistModel.cpp
+    AppState.cpp
 )
 
 list(APPEND CMAKE_PREFIX_PATH "/home/dihnhuunam/Qt/6.8.2/gcc_64")

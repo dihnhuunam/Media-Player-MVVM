@@ -27,8 +27,8 @@ public:
     qint64 position() const { return m_mediaPlayer->position(); }
     qint64 duration() const { return m_mediaPlayer->duration(); }
     qreal volume() const { return m_audioOutput->volume(); }
-    void setVolume(qreal volume);
 
+    Q_INVOKABLE void setVolume(qreal volume);
     Q_INVOKABLE void search(const QString &query);
     Q_INVOKABLE void playSong(int songId, const QString &title, const QStringList &artists);
     Q_INVOKABLE void setPosition(qint64 position);

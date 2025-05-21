@@ -31,6 +31,5 @@
         <file>Source/View/LoginView.qml</file>
         <file>Source/View/RegisterView.qml</file>
         <file>Source/View/NavigationManager.qml</file>
-        <file>Source/View/AppState.qml</file>
     </qresource>
 </RCC>

@@ -4,25 +4,11 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtMultimedia
 import "Components"
+import AppState 1.0
 
 Item {
-    // Properties from AppState and local state
-    property string playlistName: AppState ? AppState.currentPlaylistName : "Unknown Playlist"
-    property string title: songViewModel ? songViewModel.currentSongTitle : "No Song"
-    property string artist: songViewModel ? songViewModel.currentSongArtist : "Unknown Artist"
-    property string playTime: songViewModel && songViewModel.duration > 0 ? formatDuration(songViewModel.position) : "0:00"
-    property bool isPlaying: songViewModel ? songViewModel.isPlaying : false
-    property real volume: songViewModel ? songViewModel.volume : 0.5
-    property bool shuffle: false
-    property int repeatMode: 0 // 0: none, 1: repeat all, 2: repeat one
-    property bool muted: false
-    property real previousVolume: 0.5
-    property bool isSearching: false // Trạng thái tìm kiếm
-
-    // Scale Factor
     readonly property real scaleFactor: Math.min(parent.width / 1024, parent.height / 600)
 
-    // Top Controls Properties
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
@@ -32,29 +18,31 @@ Item {
     property real topControlSpacing: 30
     property real topControlMargin: 18
 
-    // Song Info Properties
     property real songInfoTitleSize: 44
     property real songInfoArtistSize: 36
     property real songInfoTimeSize: 34
     property real songInfoSpacing: 20
 
-    // Control Buttons Properties
     property real controlButtonSize: 60
     property real controlIconSize: 24
     property real controlPlayIconSize: 30
     property real controlSpacing: 30
 
-    // Volume Control Properties
     property real volumeIconSize: 24
     property real volumeSliderWidth: 100
     property real volumeSliderHeight: 24
     property real volumeSpacing: 8
 
-    // Search Results Properties
     property real searchResultMaxHeight: 300
     property real searchResultItemHeight: 40
     property real searchResultFontSize: 16
     property real searchResultMargin: 10
+
+    property bool shuffle: false
+    property int repeatMode: 0
+    property bool muted: false
+    property real previousVolume: 0.5
+    property bool isSearching: false
 
     function formatDuration(milliseconds) {
         if (!milliseconds || milliseconds < 0 || isNaN(milliseconds)) {
@@ -104,13 +92,11 @@ Item {
             spacing: 5 * scaleFactor
             z: 2
 
-            // 1. Top Controls
             RowLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: 35 * scaleFactor
                 spacing: topControlSpacing * scaleFactor
 
-                // Folder Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -124,7 +110,6 @@ Item {
                     }
                 }
 
-                // Playlist Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -141,7 +126,6 @@ Item {
                     }
                 }
 
-                // Search Bar
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
@@ -211,18 +195,24 @@ Item {
                             }
                             onAccepted: {
                                 if (songViewModel && songViewModel.songModel.count > 0) {
-                                    songViewModel.playSong(songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.IdRole), songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.TitleRole), songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.ArtistsRole));
+                                    let songId = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.IdRole);
+                                    let title = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.TitleRole);
+                                    let artists = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.ArtistsRole);
+                                    songViewModel.playSong(songId, title, artists);
+                                    AppState.setState({
+                                        title: title,
+                                        artist: artists.join(", ")
+                                    });
                                     searchResultsView.visible = false;
                                     searchInput.focus = false;
                                     isSearching = false;
-                                    console.log("Selected first result");
+                                    console.log("Selected first result, title:", title);
                                 }
                             }
                         }
                     }
                 }
 
-                // Profile Button
                 HoverButton {
                     id: profileButton
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
@@ -237,7 +227,6 @@ Item {
                     }
                 }
 
-                // Profile Dropdown Menu
                 Menu {
                     id: profileMenu
                     x: profileButton.x
@@ -297,7 +286,6 @@ Item {
                 }
             }
 
-            // 2. Search Result
             ListView {
                 id: searchResultsView
                 Layout.fillWidth: true
@@ -364,6 +352,10 @@ Item {
                                 onClicked: {
                                     if (songViewModel) {
                                         songViewModel.playSong(model.id, model.title, model.artists);
+                                        AppState.setState({
+                                            title: model.title,
+                                            artist: model.artists.join(", ")
+                                        });
                                         searchResultsView.visible = false;
                                         searchInput.focus = false;
                                         isSearching = false;
@@ -427,7 +419,6 @@ Item {
             }
         }
 
-        // 3. Song Info
         ColumnLayout {
             id: songInfoLayout
             anchors.horizontalCenter: parent.horizontalCenter
@@ -436,7 +427,7 @@ Item {
             spacing: songInfoSpacing * scaleFactor
             width: parent.width * 0.8
             z: 1
-            visible: title !== "No Song"
+            visible: AppState.currentMediaTitle !== "Unknown Title"
             Behavior on opacity {
                 NumberAnimation {
                     duration: 200
@@ -447,7 +438,7 @@ Item {
             Text {
                 id: playlistText
                 Layout.alignment: Qt.AlignHCenter
-                text: playlistName
+                text: AppState.currentPlaylistName
                 visible: false
                 font.pixelSize: songInfoArtistSize * scaleFactor
                 color: "#666666"
@@ -457,7 +448,7 @@ Item {
             Text {
                 id: titleText
                 Layout.alignment: Qt.AlignHCenter
-                text: title
+                text: AppState.currentMediaTitle
                 font.pixelSize: songInfoTitleSize * scaleFactor
                 color: "#000000"
                 font.bold: true
@@ -467,15 +458,14 @@ Item {
                 id: artistText
                 Layout.alignment: Qt.AlignHCenter
                 text: {
-                    console.log("Song Info - Artist:", artist);
-                    return artist;
+                    console.log("Song Info - Artist:", AppState.currentMediaArtist);
+                    return AppState.currentMediaArtist;
                 }
                 font.pixelSize: songInfoArtistSize * scaleFactor
                 color: "#333333"
             }
         }
 
-        // 4. Player Controls
         ColumnLayout {
             id: playerControlsLayout
             anchors.horizontalCenter: parent.horizontalCenter
@@ -484,7 +474,7 @@ Item {
             spacing: songInfoSpacing * scaleFactor
             width: parent.width * 0.8
             z: 1
-            visible: title !== "No Song"
+            visible: AppState.currentMediaTitle !== "Unknown Title"
             Behavior on opacity {
                 NumberAnimation {
                     duration: 200
@@ -500,7 +490,7 @@ Item {
             Text {
                 id: timeText
                 Layout.alignment: Qt.AlignHCenter
-                text: playTime + " / " + (songViewModel ? formatDuration(songViewModel.duration) : "0:00")
+                text: (songViewModel ? formatDuration(songViewModel.position) : "0:00") + " / " + (songViewModel ? formatDuration(songViewModel.duration) : "0:00")
                 font.pixelSize: songInfoTimeSize * scaleFactor
                 color: "#666666"
             }
@@ -568,15 +558,15 @@ Item {
                     Layout.preferredWidth: controlButtonSize * scaleFactor
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
-                    property string imageSource: isPlaying ? "qrc:/Assets/pause.png" : "qrc:/Assets/play.png"
+                    property string imageSource: songViewModel && songViewModel.isPlaying ? "qrc:/Assets/pause.png" : "qrc:/Assets/play.png"
                     onClicked: {
                         if (songViewModel) {
-                            if (isPlaying) {
+                            if (songViewModel.isPlaying) {
                                 songViewModel.pause();
                             } else {
                                 songViewModel.play();
                             }
-                            console.log(isPlaying ? "Pause Button Clicked" : "Play Button Clicked");
+                            console.log(songViewModel.isPlaying ? "Pause Button Clicked" : "Play Button Clicked");
                         }
                     }
                     Image {
@@ -634,9 +624,9 @@ Item {
                             muted = !muted;
                             if (muted) {
                                 previousVolume = songViewModel.volume;
-                                songViewModel.volume = 0;
+                                songViewModel.setVolume(0);
                             } else {
-                                songViewModel.volume = previousVolume;
+                                songViewModel.setVolume(previousVolume);
                             }
                             console.log("Volume Button Clicked, muted:", muted, "volume:", songViewModel.volume);
                         }
@@ -664,7 +654,7 @@ Item {
                     borderColor: "#000000"
                     onValueChanged: {
                         if (songViewModel) {
-                            songViewModel.volume = value;
+                            songViewModel.setVolume(value);
                             muted = (value === 0);
                             if (!muted) {
                                 previousVolume = value;

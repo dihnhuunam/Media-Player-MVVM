@@ -4,6 +4,7 @@
 #include "AuthViewModel.hpp"
 #include "SongViewModel.hpp"
 #include "PlaylistViewModel.hpp"
+#include "AppState.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
     // Register singletons
     engine.addImportPath("qrc:/");
     qmlRegisterSingletonType(QUrl("qrc:/Source/View/NavigationManager.qml"), "NavigationManager", 1, 0, "NavigationManager");
-    qmlRegisterSingletonType(QUrl("qrc:/Source/View/AppState.qml"), "AppState", 1, 0, "AppState");
+    qmlRegisterSingletonInstance<AppState>("AppState", 1, 0, "AppState", AppState::instance());
 
     // Register AuthViewModel as context property
     AuthViewModel authViewModel;

@@ -3,11 +3,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "Components"
+import AppState 1.0
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
 
-    // Properties for Top Controls
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
@@ -18,19 +18,15 @@ Item {
     property real topControlMargin: 18
     property real topControlTopMargin: 20
 
-    // Properties for Media File Info
     property real mediaTitleFontSize: 24
     property real mediaItemHeight: 50
     property real mediaItemFontSize: 16
     property real mediaSpacing: 6
     property real mediaItemMargin: 30
 
-    // Properties for Pagination
     property int itemsPerPage: 25
     property int currentPage: 0
-    property string playlistName: AppState.currentPlaylistName
-    property var mediaFiles: AppState.currentMediaFiles
-    property int totalPages: Math.ceil(mediaFiles.length / itemsPerPage)
+    property int totalPages: Math.ceil(AppState.currentMediaFiles.length / itemsPerPage)
 
     FileDialog {
         id: fileDialog
@@ -39,6 +35,17 @@ Item {
         fileMode: FileDialog.OpenFiles
         onAccepted: {
             console.log("Selected files:", fileDialog.selectedFiles);
+            let newFiles = [];
+            for (let i = 0; i < fileDialog.selectedFiles.length; i++) {
+                newFiles.push({
+                    title: fileDialog.selectedFiles[i].split('/').pop(),
+                    artist: "Unknown Artist",
+                    duration: 180000
+                });
+            }
+            AppState.setState({
+                mediaFiles: newFiles
+            });
         }
         onRejected: {
             console.log("File selection canceled");
@@ -47,8 +54,8 @@ Item {
 
     function getCurrentPageItems() {
         let startIndex = currentPage * itemsPerPage;
-        let endIndex = Math.min(startIndex + itemsPerPage, mediaFiles.length);
-        return mediaFiles.slice(startIndex, endIndex);
+        let endIndex = Math.min(startIndex + itemsPerPage, AppState.currentMediaFiles.length);
+        return AppState.currentMediaFiles.slice(startIndex, endIndex);
     }
 
     function formatDuration(milliseconds) {
@@ -67,10 +74,12 @@ Item {
         repeat: false
         onTriggered: {
             console.log("Search query:", searchInput.text);
+            if (songViewModel && searchInput.text !== "Search Songs") {
+                songViewModel.search(searchInput.text);
+            }
         }
     }
 
-    // Notification Popup
     Popup {
         id: notificationPopup
         x: (parent.width - width) / 2
@@ -109,7 +118,6 @@ Item {
             anchors.fill: parent
             spacing: mediaSpacing * scaleFactor
 
-            // Top Controls
             RowLayout {
                 id: topControl
                 Layout.topMargin: topControlTopMargin * scaleFactor
@@ -119,7 +127,6 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: topControlSpacing * scaleFactor
 
-                // Back Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -136,7 +143,6 @@ Item {
                     }
                 }
 
-                // Search Bar
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
@@ -186,7 +192,6 @@ Item {
                     }
                 }
 
-                // Add Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -213,10 +218,9 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: mediaSpacing * scaleFactor
 
-                // Playlist Name
                 Text {
                     id: mediaTitle
-                    text: playlistName
+                    text: AppState.currentPlaylistName
                     font.pixelSize: mediaTitleFontSize * scaleFactor
                     font.bold: true
                     color: "#000000"
@@ -225,7 +229,6 @@ Item {
                     Layout.rightMargin: mediaItemMargin * scaleFactor
                 }
 
-                // List of Media Files
                 ListView {
                     id: mediaFileView
                     Layout.fillWidth: true
@@ -249,7 +252,6 @@ Item {
                             anchors.fill: parent
                             spacing: mediaSpacing * scaleFactor
 
-                            // Index
                             Text {
                                 text: (currentPage * itemsPerPage + index + 1).toString()
                                 font.pixelSize: mediaItemFontSize * scaleFactor
@@ -258,7 +260,6 @@ Item {
                                 Layout.alignment: Qt.AlignVCenter
                             }
 
-                            // Title - Artist
                             Text {
                                 text: modelData.title + " - " + modelData.artist
                                 font.pixelSize: mediaItemFontSize * scaleFactor
@@ -268,17 +269,16 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml", {
+                                        AppState.setState({
                                             title: modelData.title,
-                                            artist: modelData.artist,
-                                            playlistName: playlistName
+                                            artist: modelData.artist
                                         });
+                                        NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
                                         console.log("Selected media:", modelData.title, "Navigated to MediaPlayerView");
                                     }
                                 }
                             }
 
-                            // Duration
                             Text {
                                 text: formatDuration(modelData.duration)
                                 font.pixelSize: mediaItemFontSize * scaleFactor
@@ -289,13 +289,12 @@ Item {
                         }
                     }
 
-                    // Placeholder for empty list
                     Text {
                         anchors.centerIn: parent
                         text: "No songs in this playlist"
                         font.pixelSize: mediaItemFontSize * scaleFactor
                         color: "#666666"
-                        visible: mediaFiles.length === 0
+                        visible: AppState.currentMediaFiles.length === 0
                     }
 
                     Behavior on opacity {
@@ -314,7 +313,7 @@ Item {
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 20 * scaleFactor
-                    visible: mediaFiles.length > 0
+                    visible: AppState.currentMediaFiles.length > 0
 
                     HoverButton {
                         text: "Previous"
@@ -361,6 +360,15 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    Connections {
+        target: AppState
+        function onCurrentMediaFilesChanged() {
+            currentPage = 0;
+            mediaFileView.model = getCurrentPageItems();
+            console.log("MediaFileView: Media files updated, count:", AppState.currentMediaFiles.length);
         }
     }
 

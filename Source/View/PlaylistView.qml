@@ -3,11 +3,11 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "Components"
+import AppState 1.0
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
 
-    // Properties for Top Controls
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
@@ -18,7 +18,6 @@ Item {
     property real topControlMargin: 18
     property real topControlTopMargin: 20
 
-    // Properties for Playlist Info
     property real playlistItemHeight: 50
     property real playlistItemFontSize: 16
     property real playlistItemMargin: 30
@@ -40,7 +39,6 @@ Item {
             anchors.fill: parent
             spacing: playlistSpacing * scaleFactor
 
-            // Top Controls
             RowLayout {
                 id: topControl
                 Layout.topMargin: topControlTopMargin * scaleFactor
@@ -50,7 +48,6 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: topControlSpacing * scaleFactor
 
-                // Back Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -67,7 +64,6 @@ Item {
                     }
                 }
 
-                // Search Bar
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
@@ -117,7 +113,6 @@ Item {
                     }
                 }
 
-                // Add Button
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
@@ -140,7 +135,6 @@ Item {
                 }
             }
 
-            // List of Playlists
             ListView {
                 id: playlistView
                 Layout.fillWidth: true
@@ -167,7 +161,6 @@ Item {
                         anchors.fill: parent
                         spacing: playlistSpacing * scaleFactor
 
-                        // Index
                         Text {
                             text: (index + 1).toString()
                             font.pixelSize: playlistItemFontSize * scaleFactor
@@ -176,7 +169,6 @@ Item {
                             Layout.alignment: Qt.AlignVCenter
                         }
 
-                        // Playlist Name
                         Text {
                             text: model.name
                             font.pixelSize: playlistItemFontSize * scaleFactor
@@ -187,16 +179,16 @@ Item {
                                 anchors.fill: parent
                                 onClicked: {
                                     playlistViewModel.loadSongsInPlaylist(model.id);
-                                    NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml", {
-                                        playlistId: model.id,
-                                        playlistName: model.name
+                                    AppState.setState({
+                                        playlistName: model.name,
+                                        mediaFiles: model.songs
                                     });
+                                    NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml");
                                     console.log("Clicked playlist:", model.name, "ID:", model.id);
                                 }
                             }
                         }
 
-                        // More Info Button
                         HoverButton {
                             Layout.preferredWidth: topControlIconSize * scaleFactor
                             Layout.preferredHeight: topControlIconSize * scaleFactor
@@ -219,7 +211,6 @@ Item {
                     }
                 }
 
-                // Placeholder when no playlists
                 Text {
                     anchors.centerIn: parent
                     text: "No playlists available"
@@ -230,7 +221,6 @@ Item {
             }
         }
 
-        // Add Playlist Popup
         Popup {
             id: addPlaylistPopup
             x: (parent.width - width) / 2
@@ -324,7 +314,6 @@ Item {
             }
         }
 
-        // Notification Popup
         Popup {
             id: notificationPopup
             x: (parent.width - width) / 2
@@ -355,7 +344,6 @@ Item {
             }
         }
 
-        // More Info Popup
         Popup {
             id: popup
             x: (parent.width - width) / 2
@@ -490,10 +478,9 @@ Item {
             }
         }
 
-        // Connections to PlaylistViewModel
         Connections {
             target: playlistViewModel
-            function onErrorOccurred(error) { // Sử dụng tín hiệu errorOccurred
+            function onErrorOccurred(error) {
                 notificationPopup.text = error;
                 notificationPopup.color = "#F44336";
                 notificationPopup.open();
@@ -515,6 +502,13 @@ Item {
                 notificationPopup.text = "Playlist deleted successfully (ID: " + playlistId + ")";
                 notificationPopup.color = "#4CAF50";
                 notificationPopup.open();
+            }
+
+            function onSongsLoaded(playlistId, songs, message) {
+                AppState.setState({
+                    mediaFiles: songs
+                });
+                console.log("Songs loaded for playlist ID:", playlistId, "Count:", songs.length);
             }
         }
     }
