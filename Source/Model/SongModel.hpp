@@ -55,13 +55,12 @@ signals:
     void isLoadingChanged();
 
 private slots:
-    void handleSearchReply(QNetworkReply *reply);
+    void onSearchReply();
 
 private:
     QString m_query;
-    QList<SongData> m_songs;
-    QNetworkAccessManager m_networkManager;
-    QString m_baseUrl = "http://localhost:3000";
+    QList<QMap<int, QVariant>> m_songs;      // Sửa thành QList<QMap<int, QVariant>> để khớp với .cpp
+    QNetworkAccessManager *m_networkManager; // Sửa thành pointer để khớp với .cpp
     bool m_isLoading = false;
 };
 

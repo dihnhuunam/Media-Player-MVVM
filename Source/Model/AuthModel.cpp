@@ -1,4 +1,5 @@
 #include "AuthModel.hpp"
+#include "AppConfig.hpp"
 #include <QUrl>
 #include <QNetworkRequest>
 #include <QJsonObject>
@@ -14,7 +15,7 @@ AuthModel::AuthModel(QObject *parent)
 
 void AuthModel::loginUser(const QString &email, const QString &password)
 {
-    QUrl url("http://localhost:3000/api/auth/login");
+    QUrl url(AppConfig::instance().getAuthLoginEndpoint());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
@@ -33,7 +34,7 @@ void AuthModel::loginUser(const QString &email, const QString &password)
 
 void AuthModel::registerUser(const QString &email, const QString &password, const QString &name, const QString &dob)
 {
-    QUrl url("http://localhost:3000/api/auth/register");
+    QUrl url(AppConfig::instance().getAuthRegisterEndpoint());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 

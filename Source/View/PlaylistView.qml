@@ -178,12 +178,12 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
+                                    console.log("PlaylistView: Clicking playlist, ID:", model.id, "Name:", model.name);
                                     playlistViewModel.loadSongsInPlaylist(model.id);
                                     AppState.setState({
-                                        playlistName: model.name,
-                                        mediaFiles: model.songs
+                                        playlistId: model.id,
+                                        playlistName: model.name
                                     });
-                                    NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml");
                                     console.log("Clicked playlist:", model.name, "ID:", model.id);
                                 }
                             }
@@ -505,10 +505,11 @@ Item {
             }
 
             function onSongsLoaded(playlistId, songs, message) {
+                console.log("PlaylistView: Songs loaded for playlist ID:", playlistId, "Count:", songs.length);
                 AppState.setState({
                     mediaFiles: songs
                 });
-                console.log("Songs loaded for playlist ID:", playlistId, "Count:", songs.length);
+                NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml");
             }
         }
     }

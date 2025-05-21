@@ -38,9 +38,12 @@ Item {
             let newFiles = [];
             for (let i = 0; i < fileDialog.selectedFiles.length; i++) {
                 newFiles.push({
+                    id: 0 // Giá trị tạm thời, có thể cần API để tạo ID
+                    ,
                     title: fileDialog.selectedFiles[i].split('/').pop(),
-                    artist: "Unknown Artist",
-                    duration: 180000
+                    artists: ["Unknown Artist"],
+                    file_path: fileDialog.selectedFiles[i],
+                    uploaded_at: new Date().toISOString()
                 });
             }
             AppState.setState({
@@ -261,7 +264,7 @@ Item {
                             }
 
                             Text {
-                                text: modelData.title + " - " + modelData.artist
+                                text: modelData.title + " - " + (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist")
                                 font.pixelSize: mediaItemFontSize * scaleFactor
                                 color: "#333333"
                                 Layout.fillWidth: true
@@ -271,16 +274,17 @@ Item {
                                     onClicked: {
                                         AppState.setState({
                                             title: modelData.title,
-                                            artist: modelData.artist
+                                            artist: modelData.artists ? modelData.artists.join(", ") : "Unknown Artist",
+                                            playlistId: AppState.currentPlaylistId
                                         });
                                         NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
-                                        console.log("Selected media:", modelData.title, "Navigated to MediaPlayerView");
+                                        console.log("Selected media:", modelData.title, "Artists:", modelData.artists.join(", "), "Navigated to MediaPlayerView");
                                     }
                                 }
                             }
 
                             Text {
-                                text: formatDuration(modelData.duration)
+                                text: "N/A" // API không cung cấp duration
                                 font.pixelSize: mediaItemFontSize * scaleFactor
                                 color: "#666666"
                                 Layout.rightMargin: mediaItemMargin * scaleFactor
@@ -367,12 +371,13 @@ Item {
         target: AppState
         function onCurrentMediaFilesChanged() {
             currentPage = 0;
+            totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
             mediaFileView.model = getCurrentPageItems();
-            console.log("MediaFileView: Media files updated, count:", AppState.currentMediaFiles.length);
+            console.log("MediaFileView: Media files updated, count:", AppState.currentMediaFiles.length, "from playlist ID:", AppState.currentPlaylistId);
         }
     }
 
     Component.onCompleted: {
-        console.log("MediaFileView: Component completed");
+        console.log("MediaFileView: Component completed, initial media files count:", AppState.currentMediaFiles.length);
     }
 }

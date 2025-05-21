@@ -72,7 +72,6 @@ private:
     QList<PlaylistData> m_playlists;
     QNetworkAccessManager m_networkManager;
     QSettings *m_settings;
-    QString m_baseUrl = "http://localhost:3000/api";
     bool m_isLoading = false;
 };
 

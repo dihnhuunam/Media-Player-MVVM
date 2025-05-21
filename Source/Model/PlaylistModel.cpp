@@ -1,31 +1,24 @@
 #include "PlaylistModel.hpp"
-#include <QUrl>
-#include <QNetworkRequest>
-#include <QDebug>
+#include "AppConfig.hpp"
+#include "AppState.hpp"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QUrlQuery>
 
-PlaylistModel::PlaylistModel(QObject *parent)
-    : QAbstractListModel(parent),
-      m_networkManager(this),
-      m_settings(new QSettings("MediaPlayer", "Auth", this))
-{
-    connect(&m_networkManager, &QNetworkAccessManager::finished,
-            this, &PlaylistModel::handleNetworkReply);
-}
+PlaylistModel::PlaylistModel(QObject *parent) : QAbstractListModel(parent), m_networkManager(), m_settings(new QSettings("MediaPlayer", "Auth", this)) {}
 
 int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
-    if (parent.isValid())
-        return 0;
+    Q_UNUSED(parent);
     return m_playlists.count();
 }
 
 QVariant PlaylistModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || index.row() >= m_playlists.count())
+    if (index.row() < 0 || index.row() >= m_playlists.count())
         return QVariant();
-
     const PlaylistData &playlist = m_playlists[index.row()];
-
     switch (role)
     {
     case IdRole:
@@ -59,261 +52,238 @@ QHash<int, QByteArray> PlaylistModel::roleNames() const
 
 bool PlaylistModel::isAuthenticated() const
 {
-    QString token = m_settings->value("jwt_token", "").toString();
-    return !token.isEmpty();
+    return !m_settings->value("jwt_token").toString().isEmpty();
 }
 
 void PlaylistModel::loadUserPlaylists()
 {
-    if (!isAuthenticated())
-    {
-        emit errorOccurred("Please login to load playlists");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
-    }
-
     m_isLoading = true;
     emit isLoadingChanged();
 
-    QUrl url(m_baseUrl + "/playlists");
+    QUrl url(AppConfig::instance().getPlaylistsEndpoint());
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    m_networkManager.get(request);
-    qDebug() << "PlaylistModel: Loading user playlists";
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
+    {
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    }
+    QNetworkReply *reply = m_networkManager.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::createPlaylist(const QString &name, const QString &description)
 {
-    if (!isAuthenticated())
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistsEndpoint());
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
     {
-        emit errorOccurred("Please login to create a playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QJsonObject jsonObject;
-    jsonObject["name"] = name;
-    jsonObject["description"] = description.isEmpty() ? QJsonValue() : description;
+    QJsonObject json;
+    json["name"] = name;
+    json["description"] = description;
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
 
-    QNetworkRequest request(QUrl(m_baseUrl + "/playlists"));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    QByteArray jsonData = QJsonDocument(jsonObject).toJson();
-    m_networkManager.post(request, jsonData);
-    qDebug() << "PlaylistModel: Creating playlist:" << name;
+    QNetworkReply *reply = m_networkManager.post(request, data);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::updatePlaylist(int playlistId, const QString &name, const QString &description)
 {
-    if (!isAuthenticated())
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistEndpoint(playlistId));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
     {
-        emit errorOccurred("Please login to update a playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QJsonObject jsonObject;
-    jsonObject["name"] = name;
-    jsonObject["description"] = description.isEmpty() ? QJsonValue() : description;
+    QJsonObject json;
+    json["name"] = name;
+    json["description"] = description;
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
 
-    QNetworkRequest request(QUrl(m_baseUrl + "/playlists/" + QString::number(playlistId)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    QByteArray jsonData = QJsonDocument(jsonObject).toJson();
-    m_networkManager.sendCustomRequest(request, "PUT", jsonData);
-    qDebug() << "PlaylistModel: Updating playlist:" << playlistId;
+    QNetworkReply *reply = m_networkManager.put(request, data);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::deletePlaylist(int playlistId)
 {
-    if (!isAuthenticated())
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistEndpoint(playlistId));
+    QNetworkRequest request(url);
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
     {
-        emit errorOccurred("Please login to delete a playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QNetworkRequest request(QUrl(m_baseUrl + "/playlists/" + QString::number(playlistId)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    m_networkManager.deleteResource(request);
-    qDebug() << "PlaylistModel: Deleting playlist:" << playlistId;
+    QNetworkReply *reply = m_networkManager.deleteResource(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::addSongToPlaylist(int playlistId, int songId)
 {
-    if (!isAuthenticated())
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistsSongsEndpoint());
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
     {
-        emit errorOccurred("Please login to add a song to playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QJsonObject jsonObject;
-    jsonObject["playlistId"] = playlistId;
-    jsonObject["songId"] = songId;
+    QJsonObject json;
+    json["playlistId"] = playlistId;
+    json["songId"] = songId;
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
 
-    QNetworkRequest request(QUrl(m_baseUrl + "/playlists/songs"));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    QByteArray jsonData = QJsonDocument(jsonObject).toJson();
-    m_networkManager.post(request, jsonData);
-    qDebug() << "PlaylistModel: Adding song" << songId << "to playlist" << playlistId;
+    QNetworkReply *reply = m_networkManager.post(request, data);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::removeSongFromPlaylist(int playlistId, int songId)
 {
-    if (!isAuthenticated())
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistSongEndpoint(playlistId, songId));
+    QNetworkRequest request(url);
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
     {
-        emit errorOccurred("Please login to remove a song from playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QNetworkRequest request(QUrl(m_baseUrl + "/playlists/" + QString::number(playlistId) + "/songs/" + QString::number(songId)));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
-
-    m_networkManager.deleteResource(request);
-    qDebug() << "PlaylistModel: Removing song" << songId << "from playlist" << playlistId;
+    QNetworkReply *reply = m_networkManager.deleteResource(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::loadSongsInPlaylist(int playlistId)
 {
-    if (!isAuthenticated())
-    {
-        emit errorOccurred("Please login to load songs in playlist");
-        qDebug() << "PlaylistModel: User not authenticated";
-        return;
-    }
-
     m_isLoading = true;
     emit isLoadingChanged();
 
-    QUrl url(m_baseUrl + "/playlists/" + QString::number(playlistId) + "/songs");
+    QUrl url(AppConfig::instance().getPlaylistSongsEndpoint(playlistId));
     QNetworkRequest request(url);
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    request.setRawHeader("Authorization", ("Bearer " + m_settings->value("jwt_token", "").toString()).toUtf8());
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
+    {
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    }
 
-    m_networkManager.get(request);
-    qDebug() << "PlaylistModel: Loading songs for playlist" << playlistId;
+    QNetworkReply *reply = m_networkManager.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
 }
 
 void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
 {
-    m_isLoading = false;
-    emit isLoadingChanged();
-
-    if (reply->error() != QNetworkReply::NoError)
-    {
-        emit errorOccurred(reply->errorString());
-        reply->deleteLater();
+    if (!reply)
         return;
-    }
 
-    QByteArray data = reply->readAll();
-    QJsonDocument jsonDoc = QJsonDocument::fromJson(data);
-    QString endpoint = reply->url().path();
-
-    if (reply->operation() == QNetworkAccessManager::GetOperation)
+    if (reply->error() == QNetworkReply::NoError)
     {
-        if (endpoint.contains("/playlists/") && endpoint.endsWith("/songs"))
+        QByteArray responseData = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(responseData);
+        if (doc.isArray())
         {
-            int playlistId = endpoint.split("/")[2].toInt();
-            if (jsonDoc.isArray())
-            {
-                QJsonArray songsArray = jsonDoc.array();
-                QList<SongData> songs;
-                for (const QJsonValue &songValue : songsArray)
-                {
-                    QJsonObject songObj = songValue.toObject();
-                    SongData song;
-                    song.id = songObj["id"].toInt();
-                    song.title = songObj["title"].toString();
-                    song.artists = songObj["artists"].toVariant().toStringList();
-                    song.filePath = songObj["file_path"].toString();
-                    song.genres = songObj["genres"].toVariant().toStringList();
-                    songs.append(song);
-                }
-                emit songsLoaded(playlistId, songs, "Songs loaded successfully");
-            }
-            else
-            {
-                emit errorOccurred("Invalid response format for songs");
-            }
-        }
-        else if (endpoint.contains("/playlists"))
-        {
+            QJsonArray jsonArray = doc.array();
             beginResetModel();
             m_playlists.clear();
-            QJsonArray playlists = jsonDoc.array();
-
-            for (const QJsonValue &value : playlists)
+            for (const QJsonValue &value : jsonArray)
             {
                 QJsonObject obj = value.toObject();
                 PlaylistData playlist;
                 playlist.id = obj["id"].toInt();
                 playlist.name = obj["name"].toString();
                 playlist.description = obj["description"].toString();
+                playlist.songs.clear(); // Không tải songs trực tiếp, cần loadSongsInPlaylist
+                playlist.imageUrl = obj["imageUrl"].toString();
                 playlist.userId = obj["userId"].toInt();
-                playlist.imageUrl = ""; // Không có trường imageUrl từ API hiện tại
-
-                QJsonArray songsArray = obj["songs"].toArray();
-                for (const QJsonValue &songValue : songsArray)
-                {
-                    QJsonObject songObj = songValue.toObject();
-                    SongData song;
-                    song.id = songObj["id"].toInt();
-                    song.title = songObj["title"].toString();
-                    song.artists = songObj["artists"].toVariant().toStringList();
-                    song.filePath = songObj["file_path"].toString();
-                    song.genres = songObj["genres"].toVariant().toStringList();
-                    playlist.songs.append(song);
-                }
-
                 m_playlists.append(playlist);
             }
             endResetModel();
             emit playlistsChanged();
         }
+        else if (doc.isObject())
+        {
+            QJsonObject jsonObj = doc.object();
+            QString endpoint = reply->url().path();
+            if (endpoint.endsWith("/playlists"))
+            {
+                int playlistId = jsonObj["id"].toInt();
+                emit playlistCreated(playlistId);
+            }
+            else if (endpoint.contains("/playlists/") && reply->operation() == QNetworkAccessManager::PutOperation)
+            {
+                int playlistId = jsonObj["id"].toInt();
+                emit playlistUpdated(playlistId);
+            }
+            else if (endpoint.contains("/playlists/") && reply->operation() == QNetworkAccessManager::DeleteOperation)
+            {
+                int playlistId = jsonObj["id"].toInt();
+                emit playlistDeleted(playlistId);
+            }
+            else if (endpoint.endsWith("/playlists/songs"))
+            {
+                int playlistId = jsonObj["playlistId"].toInt();
+                emit songAdded(playlistId);
+            }
+            else if (endpoint.contains("/songs/") && reply->operation() == QNetworkAccessManager::DeleteOperation)
+            {
+                int playlistId = jsonObj["playlistId"].toInt();
+                emit songRemoved(playlistId);
+            }
+            else if (endpoint.contains("/songs"))
+            {
+                QJsonArray jsonArray = jsonObj["songs"].toArray();
+                QList<SongData> songs;
+                for (const QJsonValue &value : jsonArray)
+                {
+                    QJsonObject obj = value.toObject();
+                    SongData song;
+                    song.id = obj["id"].toInt();
+                    song.title = obj["title"].toString();
+                    song.artists = obj["artists"].toVariant().toStringList();
+                    song.filePath = obj["file_path"].toString();
+                    song.genres = obj["genres"].toVariant().toStringList();
+                    songs.append(song);
+                }
+                int playlistId = 0; // Cần lấy từ URL hoặc response
+                emit songsLoaded(playlistId, songs, "Songs loaded successfully");
+            }
+        }
     }
-    else if (reply->operation() == QNetworkAccessManager::PostOperation)
+    else
     {
-        if (endpoint.contains("/playlists/songs"))
-        {
-            int playlistId = jsonDoc.object()["playlistId"].toInt();
-            emit songAdded(playlistId);
-        }
-        else if (endpoint.contains("/playlists"))
-        {
-            QJsonObject obj = jsonDoc.object();
-            emit playlistCreated(obj["playlistId"].toInt());
-        }
+        emit errorOccurred(reply->errorString());
     }
-    else if (reply->operation() == QNetworkAccessManager::CustomOperation && reply->request().attribute(QNetworkRequest::CustomVerbAttribute).toString() == "PUT")
-    {
-        int playlistId = endpoint.split("/")[2].toInt();
-        emit playlistUpdated(playlistId);
-    }
-    else if (reply->operation() == QNetworkAccessManager::DeleteOperation)
-    {
-        if (endpoint.contains("/songs"))
-        {
-            int playlistId = endpoint.split("/")[2].toInt();
-            emit songRemoved(playlistId);
-        }
-        else
-        {
-            int playlistId = endpoint.split("/")[2].toInt();
-            emit playlistDeleted(playlistId);
-        }
-    }
-
+    m_isLoading = false;
+    emit isLoadingChanged();
     reply->deleteLater();
 }
