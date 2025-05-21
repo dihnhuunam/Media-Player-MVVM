@@ -46,6 +46,7 @@ public:
     bool isLoading() const { return m_isLoading; }
 
     Q_INVOKABLE void searchSongs(const QString &query);
+    Q_INVOKABLE void fetchAllSongs();
     Q_INVOKABLE QString getStreamUrl(int songId) const;
 
 signals:
@@ -56,11 +57,12 @@ signals:
 
 private slots:
     void onSearchReply();
+    void onFetchAllSongsReply();
 
 private:
     QString m_query;
-    QList<QMap<int, QVariant>> m_songs;     
-    QNetworkAccessManager *m_networkManager; 
+    QList<QMap<int, QVariant>> m_songs;
+    QNetworkAccessManager *m_networkManager;
     bool m_isLoading = false;
 };
 

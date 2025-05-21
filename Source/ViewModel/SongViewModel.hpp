@@ -30,6 +30,7 @@ public:
 
     Q_INVOKABLE void setVolume(qreal volume);
     Q_INVOKABLE void search(const QString &query);
+    Q_INVOKABLE void fetchAllSongs();
     Q_INVOKABLE void playSong(int songId, const QString &title, const QStringList &artists);
     Q_INVOKABLE void setPosition(qint64 position);
     Q_INVOKABLE void play();
@@ -42,6 +43,7 @@ signals:
     void durationChanged();
     void volumeChanged();
     void errorOccurred(const QString &error);
+    void allSongsFetched();
 
 private slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);

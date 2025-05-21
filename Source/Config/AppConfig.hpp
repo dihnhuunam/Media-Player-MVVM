@@ -11,6 +11,7 @@ public:
     QString getBaseUrl() const;
     QString getAuthLoginEndpoint() const;
     QString getAuthRegisterEndpoint() const;
+    QString getSongsEndpoint() const;
     QString getSongsSearchEndpoint() const;
     QString getSongsStreamEndpoint(int songId) const;
     QString getPlaylistsEndpoint() const;

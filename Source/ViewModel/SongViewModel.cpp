@@ -17,6 +17,8 @@ SongViewModel::SongViewModel(QObject *parent)
             this, &SongViewModel::onDurationChanged);
     connect(m_mediaPlayer, &QMediaPlayer::errorOccurred,
             this, &SongViewModel::onErrorOccurred);
+    connect(m_songModel, &SongModel::songsChanged,
+            this, &SongViewModel::allSongsFetched);
 }
 
 void SongViewModel::setVolume(qreal volume)
@@ -32,6 +34,11 @@ void SongViewModel::setVolume(qreal volume)
 void SongViewModel::search(const QString &query)
 {
     m_songModel->setQuery(query);
+}
+
+void SongViewModel::fetchAllSongs()
+{
+    m_songModel->fetchAllSongs();
 }
 
 void SongViewModel::playSong(int songId, const QString &title, const QStringList &artists)
