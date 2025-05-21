@@ -197,8 +197,6 @@ Item {
                             onClicked: {
                                 popup.playlistId = model.id;
                                 popup.playlistName = model.name;
-                                renameField.text = model.name;
-                                descriptionField.text = model.description;
                                 popup.open();
                             }
                             Image {
@@ -226,7 +224,7 @@ Item {
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
             width: 300 * scaleFactor
-            height: 250 * scaleFactor
+            height: 150 * scaleFactor
             modal: true
             focus: true
             background: Rectangle {
@@ -261,28 +259,6 @@ Item {
                     }
                 }
 
-                Text {
-                    text: "Enter Playlist Description (Optional)"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#000000"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                TextField {
-                    id: newPlaylistDescriptionField
-                    placeholderText: "Description"
-                    placeholderTextColor: "#666666"
-                    color: "#000000"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    Layout.fillWidth: true
-                    Layout.leftMargin: playlistItemMargin * scaleFactor
-                    Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                }
-
                 Button {
                     id: addButton
                     text: "Add"
@@ -302,12 +278,10 @@ Item {
                     }
                     onClicked: {
                         var name = newPlaylistNameField.text.trim();
-                        var description = newPlaylistDescriptionField.text.trim();
                         if (name !== "") {
-                            playlistViewModel.createNewPlaylist(name, description);
+                            playlistViewModel.createNewPlaylist(name);
                             addPlaylistPopup.close();
                             newPlaylistNameField.text = "";
-                            newPlaylistDescriptionField.text = "";
                         }
                     }
                 }
@@ -348,8 +322,8 @@ Item {
             id: popup
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300 * scaleFactor
-            height: 250 * scaleFactor
+            width: 200 * scaleFactor
+            height: 100 * scaleFactor
             modal: true
             focus: true
             background: Rectangle {
@@ -364,89 +338,6 @@ Item {
             ColumnLayout {
                 anchors.fill: parent
                 spacing: playlistSpacing * scaleFactor
-
-                Text {
-                    text: "Playlist: " + (popup.playlistName || "Unknown Playlist")
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#000000"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                Text {
-                    text: "New Name"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#000000"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                TextField {
-                    id: renameField
-                    placeholderText: "New playlist name"
-                    placeholderTextColor: "#666666"
-                    color: "#000000"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    Layout.fillWidth: true
-                    Layout.leftMargin: playlistItemMargin * scaleFactor
-                    Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                }
-
-                Text {
-                    text: "New Description (Optional)"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#000000"
-                    Layout.alignment: Qt.AlignHCenter
-                }
-
-                TextField {
-                    id: descriptionField
-                    placeholderText: "Description"
-                    placeholderTextColor: "#666666"
-                    color: "#000000"
-                    font.pixelSize: playlistItemFontSize * scaleFactor
-                    Layout.fillWidth: true
-                    Layout.leftMargin: playlistItemMargin * scaleFactor
-                    Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                }
-
-                Button {
-                    text: "Rename"
-                    Layout.fillWidth: true
-                    Layout.leftMargin: playlistItemMargin * scaleFactor
-                    Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        font.pixelSize: playlistItemFontSize * scaleFactor
-                        color: "#000000"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: {
-                        if (playlistViewModel.isAuthenticated) {
-                            var newName = renameField.text.trim();
-                            var newDescription = descriptionField.text.trim();
-                            if (newName !== "" && newName !== popup.playlistName) {
-                                playlistViewModel.updatePlaylist(popup.playlistId, newName, newDescription);
-                                popup.close();
-                            }
-                        } else {
-                            notificationPopup.text = "Please login to rename a playlist";
-                            notificationPopup.color = "#F44336";
-                            notificationPopup.open();
-                        }
-                    }
-                }
 
                 Button {
                     text: "Delete"

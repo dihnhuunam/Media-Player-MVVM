@@ -2,7 +2,7 @@
 #define PLAYLISTVIEWMODEL_H
 
 #include <QObject>
-#include "../Model/PlaylistModel.hpp"
+#include "PlaylistModel.hpp"
 
 class PlaylistViewModel : public QObject
 {
@@ -20,8 +20,8 @@ public:
     bool isAuthenticated() const;
 
     Q_INVOKABLE void loadPlaylists();
-    Q_INVOKABLE void createNewPlaylist(const QString &name, const QString &description);
-    Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name, const QString &description);
+    Q_INVOKABLE void createNewPlaylist(const QString &name);
+    Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name);
     Q_INVOKABLE void deletePlaylist(int playlistId);
     Q_INVOKABLE void addSongToPlaylist(int playlistId, int songId);
     Q_INVOKABLE void removeSongFromPlaylist(int playlistId, int songId);
@@ -29,7 +29,7 @@ public:
 
 signals:
     void errorMessageChanged();
-    void errorOccurred(const QString &error); // Thêm tín hiệu errorOccurred
+    void errorOccurred(const QString &error);
     void authenticationChanged();
     void playlistCreated(int playlistId);
     void playlistUpdated(int playlistId);

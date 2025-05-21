@@ -43,7 +43,7 @@ void PlaylistViewModel::loadPlaylists()
     m_playlistModel->loadUserPlaylists();
 }
 
-void PlaylistViewModel::createNewPlaylist(const QString &name, const QString &description)
+void PlaylistViewModel::createNewPlaylist(const QString &name)
 {
     if (!isAuthenticated())
     {
@@ -51,10 +51,10 @@ void PlaylistViewModel::createNewPlaylist(const QString &name, const QString &de
         qDebug() << "PlaylistViewModel: User not authenticated";
         return;
     }
-    m_playlistModel->createPlaylist(name, description);
+    m_playlistModel->createPlaylist(name);
 }
 
-void PlaylistViewModel::updatePlaylist(int playlistId, const QString &name, const QString &description)
+void PlaylistViewModel::updatePlaylist(int playlistId, const QString &name)
 {
     if (!isAuthenticated())
     {
@@ -62,7 +62,7 @@ void PlaylistViewModel::updatePlaylist(int playlistId, const QString &name, cons
         qDebug() << "PlaylistViewModel: User not authenticated";
         return;
     }
-    m_playlistModel->updatePlaylist(playlistId, name, description);
+    m_playlistModel->updatePlaylist(playlistId, name);
 }
 
 void PlaylistViewModel::deletePlaylist(int playlistId)

@@ -1,6 +1,5 @@
 #include "PlaylistModel.hpp"
 #include "AppConfig.hpp"
-#include "AppState.hpp"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -25,8 +24,6 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
         return playlist.id;
     case NameRole:
         return playlist.name;
-    case DescriptionRole:
-        return playlist.description;
     case SongsRole:
         return QVariant::fromValue(playlist.songs);
     case ImageUrlRole:
@@ -43,7 +40,6 @@ QHash<int, QByteArray> PlaylistModel::roleNames() const
     QHash<int, QByteArray> roles;
     roles[IdRole] = "id";
     roles[NameRole] = "name";
-    roles[DescriptionRole] = "description";
     roles[SongsRole] = "songs";
     roles[ImageUrlRole] = "imageUrl";
     roles[UserIdRole] = "userId";
@@ -72,7 +68,7 @@ void PlaylistModel::loadUserPlaylists()
             { handleNetworkReply(reply); });
 }
 
-void PlaylistModel::createPlaylist(const QString &name, const QString &description)
+void PlaylistModel::createPlaylist(const QString &name)
 {
     m_isLoading = true;
     emit isLoadingChanged();
@@ -88,7 +84,6 @@ void PlaylistModel::createPlaylist(const QString &name, const QString &descripti
 
     QJsonObject json;
     json["name"] = name;
-    json["description"] = description;
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
 
@@ -97,7 +92,7 @@ void PlaylistModel::createPlaylist(const QString &name, const QString &descripti
             { handleNetworkReply(reply); });
 }
 
-void PlaylistModel::updatePlaylist(int playlistId, const QString &name, const QString &description)
+void PlaylistModel::updatePlaylist(int playlistId, const QString &name)
 {
     m_isLoading = true;
     emit isLoadingChanged();
@@ -113,7 +108,6 @@ void PlaylistModel::updatePlaylist(int playlistId, const QString &name, const QS
 
     QJsonObject json;
     json["name"] = name;
-    json["description"] = description;
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
 
@@ -221,7 +215,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                 PlaylistData playlist;
                 playlist.id = obj["id"].toInt();
                 playlist.name = obj["name"].toString();
-                playlist.description = obj["description"].toString();
                 playlist.songs.clear(); // Không tải songs trực tiếp, cần loadSongsInPlaylist
                 playlist.imageUrl = obj["imageUrl"].toString();
                 playlist.userId = obj["userId"].toInt();

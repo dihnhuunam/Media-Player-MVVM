@@ -14,7 +14,6 @@ struct PlaylistData
 {
     int id;
     QString name;
-    QString description;
     QList<SongData> songs;
     QString imageUrl;
     int userId;
@@ -33,7 +32,6 @@ public:
     {
         IdRole = Qt::UserRole + 1,
         NameRole,
-        DescriptionRole,
         SongsRole,
         ImageUrlRole,
         UserIdRole
@@ -47,11 +45,11 @@ public:
     bool isAuthenticated() const;
 
     Q_INVOKABLE void loadUserPlaylists();
-    Q_INVOKABLE void createPlaylist(const QString &name, const QString &description);
-    Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name, const QString &description);
-    Q_INVOKABLE void deletePlaylist(int playlistId);
+    Q_INVOKABLE void createPlaylist(const QString &name);
+    Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name);
     Q_INVOKABLE void addSongToPlaylist(int playlistId, int songId);
     Q_INVOKABLE void removeSongFromPlaylist(int playlistId, int songId);
+    Q_INVOKABLE void deletePlaylist(int playlistId);
     Q_INVOKABLE void loadSongsInPlaylist(int playlistId);
 
 signals:
