@@ -23,7 +23,7 @@ bool AppConfig::loadEnvFile(const QString &filePath)
     {
         QString line = in.readLine().trimmed();
         if (line.isEmpty() || line.startsWith("#"))
-            continue; // Bỏ qua dòng trống hoặc comment
+            continue;
 
         QStringList parts = line.split("=");
         if (parts.size() < 2)
@@ -32,7 +32,6 @@ bool AppConfig::loadEnvFile(const QString &filePath)
         QString key = parts[0].trimmed();
         QString value = parts.mid(1).join("=").trimmed();
 
-        // Thay thế các biến trong giá trị (ví dụ: ${BASE_URL})
         for (const auto &envKey : envVariables.keys())
         {
             value.replace("${" + envKey + "}", envVariables[envKey]);
