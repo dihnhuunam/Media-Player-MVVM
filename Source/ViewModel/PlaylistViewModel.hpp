@@ -9,7 +9,6 @@ class PlaylistViewModel : public QObject
     Q_OBJECT
     Q_PROPERTY(PlaylistModel *playlistModel READ playlistModel CONSTANT)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
-    Q_PROPERTY(bool isAuthenticated READ isAuthenticated NOTIFY authenticationChanged)
 
 public:
     explicit PlaylistViewModel(QObject *parent = nullptr);
@@ -17,7 +16,6 @@ public:
 
     PlaylistModel *playlistModel() const { return m_playlistModel; }
     QString errorMessage() const { return m_errorMessage; }
-    bool isAuthenticated() const;
 
     Q_INVOKABLE void loadPlaylists();
     Q_INVOKABLE void createNewPlaylist(const QString &name);
@@ -30,7 +28,6 @@ public:
 signals:
     void errorMessageChanged();
     void errorOccurred(const QString &error);
-    void authenticationChanged();
     void playlistCreated(int playlistId);
     void playlistUpdated(int playlistId);
     void playlistDeleted(int playlistId);

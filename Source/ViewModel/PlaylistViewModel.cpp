@@ -1,5 +1,5 @@
 #include "PlaylistViewModel.hpp"
-#include <QSettings>
+#include "AppState.hpp"
 #include <QDebug>
 
 PlaylistViewModel::PlaylistViewModel(QObject *parent)
@@ -25,19 +25,12 @@ PlaylistViewModel::~PlaylistViewModel()
 {
 }
 
-bool PlaylistViewModel::isAuthenticated() const
-{
-    QSettings settings("MediaPlayer", "Auth");
-    QString token = settings.value("jwt_token", "").toString();
-    return !token.isEmpty();
-}
-
 void PlaylistViewModel::loadPlaylists()
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to load playlists");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->loadUserPlaylists();
@@ -45,10 +38,10 @@ void PlaylistViewModel::loadPlaylists()
 
 void PlaylistViewModel::createNewPlaylist(const QString &name)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to create a playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->createPlaylist(name);
@@ -56,10 +49,10 @@ void PlaylistViewModel::createNewPlaylist(const QString &name)
 
 void PlaylistViewModel::updatePlaylist(int playlistId, const QString &name)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to update a playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->updatePlaylist(playlistId, name);
@@ -67,10 +60,10 @@ void PlaylistViewModel::updatePlaylist(int playlistId, const QString &name)
 
 void PlaylistViewModel::deletePlaylist(int playlistId)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to delete a playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->deletePlaylist(playlistId);
@@ -78,10 +71,10 @@ void PlaylistViewModel::deletePlaylist(int playlistId)
 
 void PlaylistViewModel::addSongToPlaylist(int playlistId, int songId)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to add a song to playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->addSongToPlaylist(playlistId, songId);
@@ -89,10 +82,10 @@ void PlaylistViewModel::addSongToPlaylist(int playlistId, int songId)
 
 void PlaylistViewModel::removeSongFromPlaylist(int playlistId, int songId)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to remove a song from playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->removeSongFromPlaylist(playlistId, songId);
@@ -100,10 +93,10 @@ void PlaylistViewModel::removeSongFromPlaylist(int playlistId, int songId)
 
 void PlaylistViewModel::loadSongsInPlaylist(int playlistId)
 {
-    if (!isAuthenticated())
+    if (!AppState::instance()->isAuthenticated())
     {
         emit errorOccurred("Please login to load songs in playlist");
-        qDebug() << "PlaylistViewModel: User not authenticated";
+        qDebug() << "PlaylistViewModel: User is not authenticated";
         return;
     }
     m_playlistModel->loadSongsInPlaylist(playlistId);
@@ -114,42 +107,42 @@ void PlaylistViewModel::handleError(const QString &error)
     m_errorMessage = error;
     emit errorMessageChanged();
     emit errorOccurred(error);
-    qDebug() << "PlaylistViewModel: Error -" << error;
+    qDebug() << "PlaylistViewModel: Error occurred -" << error;
 }
 
 void PlaylistViewModel::onPlaylistCreated(int playlistId)
 {
     emit playlistCreated(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: Playlist created, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: Created playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onPlaylistUpdated(int playlistId)
 {
     emit playlistUpdated(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: Playlist updated, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: Updated playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onPlaylistDeleted(int playlistId)
 {
     emit playlistDeleted(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: Playlist deleted, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: Deleted playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onSongAdded(int playlistId)
 {
     emit songAddedToPlaylist(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: Song added to playlist, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: Added song to playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onSongRemoved(int playlistId)
 {
     emit songRemovedFromPlaylist(playlistId);
     loadPlaylists();
-    qDebug() << "PlaylistViewModel: PlaylistViewModel: Song removed from playlist, ID:" << playlistId;
+    qDebug() << "PlaylistViewModel: Removed song from playlist, ID:" << playlistId;
 }
 
 void PlaylistViewModel::onSongsLoaded(int playlistId, const QList<SongData> &songs, const QString &message)
@@ -166,5 +159,5 @@ void PlaylistViewModel::onSongsLoaded(int playlistId, const QList<SongData> &son
         songList.append(songMap);
     }
     emit songsLoaded(playlistId, songList, message);
-    qDebug() << "PlaylistViewModel: Songs loaded for playlist" << playlistId << ", count:" << songList.count();
+    qDebug() << "PlaylistViewModel: Loaded songs for playlist" << playlistId << ", count:" << songList.count();
 }

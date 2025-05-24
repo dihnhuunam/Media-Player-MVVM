@@ -8,6 +8,11 @@ AppState::AppState(QObject *parent) : QObject(parent)
     m_currentMediaTitle = "Unknown Title";
     m_currentMediaArtist = "Unknown Artist";
     m_currentPlaylistId = -1;
+    m_isAuthenticated = false;
+    m_settings = new QSettings("MediaPlayer", "Auth", this);
+
+    // Load thông tin người dùng khi khởi tạo
+    loadUserInfo();
 }
 
 AppState *AppState::instance()
@@ -24,6 +29,11 @@ QVariantList AppState::currentMediaFiles() const { return m_currentMediaFiles; }
 QString AppState::currentMediaTitle() const { return m_currentMediaTitle; }
 QString AppState::currentMediaArtist() const { return m_currentMediaArtist; }
 int AppState::currentPlaylistId() const { return m_currentPlaylistId; }
+bool AppState::isAuthenticated() const { return m_isAuthenticated; }
+QString AppState::email() const { return m_email; }
+QString AppState::name() const { return m_name; }
+QString AppState::dateOfBirth() const { return m_dateOfBirth; }
+QString AppState::role() const { return m_role; }
 
 void AppState::setCurrentPlaylistName(const QString &name)
 {
@@ -70,6 +80,42 @@ void AppState::setCurrentPlaylistId(int id)
     }
 }
 
+void AppState::setEmail(const QString &email)
+{
+    if (m_email != email)
+    {
+        m_email = email;
+        emit emailChanged();
+    }
+}
+
+void AppState::setName(const QString &name)
+{
+    if (m_name != name)
+    {
+        m_name = name;
+        emit nameChanged();
+    }
+}
+
+void AppState::setDateOfBirth(const QString &dob)
+{
+    if (m_dateOfBirth != dob)
+    {
+        m_dateOfBirth = dob;
+        emit dateOfBirthChanged();
+    }
+}
+
+void AppState::setRole(const QString &role)
+{
+    if (m_role != role)
+    {
+        m_role = role;
+        emit roleChanged();
+    }
+}
+
 void AppState::setState(const QVariantMap &state)
 {
     if (state.contains("playlistName"))
@@ -92,4 +138,41 @@ void AppState::setState(const QVariantMap &state)
     {
         setCurrentPlaylistId(state["playlistId"].toInt());
     }
+}
+
+void AppState::loadUserInfo()
+{
+    QString token = m_settings->value("jwt_token", "").toString();
+    m_isAuthenticated = !token.isEmpty();
+    m_email = m_settings->value("user/email", "").toString();
+    m_name = m_settings->value("user/name", "").toString();
+    m_dateOfBirth = m_settings->value("user/dateOfBirth", "").toString();
+    m_role = m_settings->value("user/role", "").toString();
+
+    emit authenticationChanged();
+    emit emailChanged();
+    emit nameChanged();
+    emit dateOfBirthChanged();
+    emit roleChanged();
+}
+
+void AppState::clearUserInfo()
+{
+    m_settings->remove("jwt_token");
+    m_settings->remove("user/email");
+    m_settings->remove("user/name");
+    m_settings->remove("user/dateOfBirth");
+    m_settings->remove("user/role");
+
+    m_isAuthenticated = false;
+    m_email.clear();
+    m_name.clear();
+    m_dateOfBirth.clear();
+    m_role.clear();
+
+    emit authenticationChanged();
+    emit emailChanged();
+    emit nameChanged();
+    emit dateOfBirthChanged();
+    emit roleChanged();
 }

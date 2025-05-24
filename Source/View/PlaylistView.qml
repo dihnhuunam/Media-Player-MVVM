@@ -118,7 +118,7 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        if (playlistViewModel.isAuthenticated) {
+                        if (AppState.isAuthenticated) {
                             addPlaylistPopup.open();
                         } else {
                             notificationPopup.text = "Please login to create a playlist";
@@ -356,7 +356,7 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        if (playlistViewModel.isAuthenticated) {
+                        if (AppState.isAuthenticated) {
                             playlistViewModel.deletePlaylist(popup.playlistId);
                             popup.close();
                         } else {
@@ -406,7 +406,7 @@ Item {
     }
 
     Component.onCompleted: {
-        if (playlistViewModel.isAuthenticated) {
+        if (AppState.isAuthenticated) {
             playlistViewModel.loadPlaylists();
         } else {
             notificationPopup.text = "Please login to load playlists";

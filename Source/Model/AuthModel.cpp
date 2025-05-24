@@ -1,5 +1,6 @@
 #include "AuthModel.hpp"
 #include "AppConfig.hpp"
+#include "AppState.hpp"
 #include <QUrl>
 #include <QNetworkRequest>
 #include <QJsonObject>
@@ -68,7 +69,6 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
             message = obj["message"].toString();
             if (isLogin)
             {
-                // Check for successful login by presence of token and user
                 if (obj.contains("token") && obj.contains("user"))
                 {
                     success = true;
@@ -79,18 +79,17 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
                 }
                 else
                 {
-                    success = false; // Login failed, e.g., "Invalid email or password"
+                    success = false;
                 }
             }
             else
             {
-                // Assume registration success if message doesn't contain "error"
                 success = !message.contains("error", Qt::CaseInsensitive);
             }
         }
         else
         {
-            message = "Invalid response from server";
+            message = "Phản hồi không hợp lệ từ server";
         }
     }
     else
@@ -111,6 +110,7 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
 void AuthModel::saveToken(const QString &token)
 {
     m_settings->setValue("jwt_token", token);
+    AppState::instance()->loadUserInfo(); // Cập nhật trạng thái trong AppState
 }
 
 void AuthModel::saveUserInfo(const QJsonObject &user)
@@ -119,6 +119,7 @@ void AuthModel::saveUserInfo(const QJsonObject &user)
     m_settings->setValue("user/name", user["name"].toString());
     m_settings->setValue("user/dateOfBirth", user["dateOfBirth"].toString());
     m_settings->setValue("user/role", user["role"].toString());
+    AppState::instance()->loadUserInfo(); // Cập nhật trạng thái trong AppState
 }
 
 QString AuthModel::getToken() const
@@ -128,9 +129,5 @@ QString AuthModel::getToken() const
 
 void AuthModel::clearToken()
 {
-    m_settings->remove("jwt_token");
-    m_settings->remove("user/email");
-    m_settings->remove("user/name");
-    m_settings->remove("user/dateOfBirth");
-    m_settings->remove("user/role");
+    AppState::instance()->clearUserInfo(); // Gọi phương thức clearUserInfo của AppState
 }

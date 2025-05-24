@@ -1,5 +1,6 @@
 add_library(lConfig SHARED 
     AppConfig.cpp
+    AppState.cpp
 )
 
 target_include_directories(lConfig PUBLIC 

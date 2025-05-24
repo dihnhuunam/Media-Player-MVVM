@@ -55,106 +55,72 @@ Item {
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
     }
 
-    // Chuẩn hóa chuỗi để so sánh, xử lý undefined/null
+    // Chuẩn hóa chuỗi để so sánh
     function normalizeString(str) {
-        if (str === undefined || str === null) {
-            console.log("normalizeString: Input is undefined or null, returning empty string");
-            return "";
-        }
         return str.trim().replace(/\s+/g, " ");
     }
 
     // Hàm tìm chỉ số bài hát hiện tại
     function findCurrentSongIndex(songList) {
-        if (!songList || songList.length === 0 || !AppState.currentMediaTitle || !AppState.currentMediaArtist) {
-            console.log("findCurrentSongIndex: Invalid input - songList:", songList ? songList.length : "null", "currentMediaTitle:", AppState.currentMediaTitle, "currentMediaArtist:", AppState.currentMediaArtist);
-            return 0;
+        if (songList.length === 0 || !AppState.currentMediaTitle) {
+            console.log("Song list empty or no current song");
+            return 0; // Bắt đầu từ bài đầu tiên nếu không tìm thấy
         }
-
         let normalizedTitle = normalizeString(AppState.currentMediaTitle);
         let normalizedArtist = normalizeString(AppState.currentMediaArtist);
-
         for (let i = 0; i < songList.length; i++) {
             let song = songList[i];
-            if (!song || !song.title || !song.artists) {
-                console.log("findCurrentSongIndex: Invalid song at index", i, "song:", JSON.stringify(song));
-                continue;
-            }
-
             let songTitle = normalizeString(song.title);
-            let songArtists = normalizeString(song.artists.join(", "));
-
-            console.log("findCurrentSongIndex: Comparing song", i, "title:", songTitle, "with", normalizedTitle, "artists:", songArtists, "with", normalizedArtist);
-
+            let songArtists = normalizeString(song.artists ? song.artists.join(", ") : "Unknown Artist");
             if (songTitle === normalizedTitle && songArtists === normalizedArtist) {
-                console.log("findCurrentSongIndex: Found match at index", i);
                 return i;
             }
         }
-
-        console.log("findCurrentSongIndex: Current song not found, defaulting to index 0");
-        return 0;
+        console.log("Current song not found in list, defaulting to index 0");
+        return 0; // Nếu không tìm thấy, chọn bài đầu tiên
     }
 
     // Hàm phát bài hát tại chỉ số cụ thể
     function playSongAtIndex(songList, index) {
-        if (!songList || index < 0 || index >= songList.length || !songList[index]) {
-            console.log("playSongAtIndex: Invalid index or songList:", index, songList ? songList.length : "null");
+        if (index < 0 || index >= songList.length) {
+            console.log("Invalid song index:", index);
             return;
         }
         let song = songList[index];
-        if (!song.title || !song.artists || !song.id) {
-            console.log("playSongAtIndex: Invalid song at index", index, "song:", JSON.stringify(song));
-            return;
-        }
-        let artistsStr = song.artists.join(", ");
+        let artistsStr = song.artists ? song.artists.join(", ") : "Unknown Artist";
         AppState.setState({
             title: song.title,
             artist: artistsStr,
-            filePath: song.file_path || "",
+            filePath: song.file_path,
             playlistId: AppState.currentPlaylistId
         });
         songViewModel.playSong(song.id, song.title, song.artists);
-        console.log("playSongAtIndex: Playing song at index:", index, "Title:", song.title, "Artists:", artistsStr);
+        console.log("Playing song at index:", index, "Title:", song.title, "Artists:", artistsStr);
     }
 
     // Hàm lấy danh sách bài hát từ SongModel
     function getAllSongsFromModel() {
         let songs = [];
-        if (!songViewModel || !songViewModel.songModel || !allSongsLoaded) {
-            console.log("getAllSongsFromModel: Model not ready, songViewModel:", !!songViewModel, "songModel:", songViewModel ? !!songViewModel.songModel : false, "allSongsLoaded:", allSongsLoaded);
-            return songs;
-        }
-        for (let i = 0; i < songViewModel.songModel.rowCount(); i++) {
-            let index = songViewModel.songModel.index(i, 0);
-            let song = {
-                id: songViewModel.songModel.data(index, songViewModel.songModel.IdRole),
-                title: songViewModel.songModel.data(index, songViewModel.songModel.TitleRole) || "Unknown Title",
-                artists: songViewModel.songModel.data(index, songViewModel.songModel.ArtistsRole) || ["Unknown Artist"],
-                file_path: songViewModel.songModel.data(index, songViewModel.songModel.FilePathRole) || "",
-                genres: songViewModel.songModel.data(index, songViewModel.songModel.GenresRole) || []
-            };
-            // Relaxed validation: only require id to be a positive number
-            if (song.id > 0) {
-                songs.push(song);
-                console.log("getAllSongsFromModel: Added song at index", i, "id:", song.id, "title:", song.title, "artists:", song.artists, "file_path:", song.file_path, "genres:", song.genres);
-            } else {
-                console.log("getAllSongsFromModel: Skipping invalid song at index", i, "id:", song.id, "title:", song.title, "artists:", song.artists);
+        if (songViewModel && songViewModel.songModel && allSongsLoaded) {
+            for (let i = 0; i < songViewModel.songModel.rowCount(); i++) {
+                let index = songViewModel.songModel.index(i, 0);
+                songs.push({
+                    id: songViewModel.songModel.data(index, songViewModel.songModel.IdRole),
+                    title: songViewModel.songModel.data(index, songViewModel.songModel.TitleRole),
+                    artists: songViewModel.songModel.data(index, songViewModel.songModel.ArtistsRole),
+                    file_path: songViewModel.songModel.data(index, songViewModel.songModel.FilePathRole),
+                    genres: songViewModel.songModel.data(index, songViewModel.songModel.GenresRole)
+                });
             }
         }
-        console.log("getAllSongsFromModel: Retrieved", songs.length, "valid songs");
         return songs;
     }
 
     // Hàm xử lý nút Next
     function handleNext() {
-        if (AppState.currentPlaylistId === -1 && !allSongsLoaded) {
-            console.log("handleNext: Songs not yet loaded, waiting...");
-            return;
-        }
         let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
-        if (!songList || songList.length === 0) {
-            console.log("handleNext: No songs available to play");
+        if (songList.length === 0) {
+            console.log("No songs available to play");
             return;
         }
 
@@ -177,7 +143,7 @@ Item {
                     if (repeatMode === 2) {
                         nextIndex = 0; // Repeat all: Quay lại đầu
                     } else {
-                        console.log("handleNext: Reached end of song list, stopping");
+                        console.log("Reached end of song list, stopping");
                         return;
                     }
                 }
@@ -188,13 +154,9 @@ Item {
 
     // Hàm xử lý nút Previous
     function handlePrevious() {
-        if (AppState.currentPlaylistId === -1 && !allSongsLoaded) {
-            console.log("handlePrevious: Songs not yet loaded, waiting...");
-            return;
-        }
         let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
-        if (!songList || songList.length === 0) {
-            console.log("handlePrevious: No songs available to play");
+        if (songList.length === 0) {
+            console.log("No songs available to play");
             return;
         }
 
@@ -217,7 +179,7 @@ Item {
                     if (repeatMode === 2) {
                         prevIndex = songList.length - 1; // Repeat all: Quay lại cuối
                     } else {
-                        console.log("handlePrevious: Reached start of song list, stopping");
+                        console.log("Reached start of song list, stopping");
                         return;
                     }
                 }
@@ -368,13 +330,13 @@ Item {
                             onAccepted: {
                                 if (songViewModel && songViewModel.songModel.count > 0) {
                                     let songId = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.IdRole);
-                                    let title = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.TitleRole) || "Unknown Title";
-                                    let artists = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.ArtistsRole) || ["Unknown Artist"];
+                                    let title = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.TitleRole);
+                                    let artists = songViewModel.songModel.data(songViewModel.songModel.index(0, 0), songViewModel.songModel.ArtistsRole);
                                     songViewModel.playSong(songId, title, artists);
                                     AppState.setState({
                                         title: title,
                                         artist: artists.join(", "),
-                                        playlistId: -1
+                                        playlistId: -1 // Đặt playlistId thành -1 khi phát từ tìm kiếm
                                     });
                                     searchResultsView.visible = false;
                                     searchInput.focus = false;
@@ -424,7 +386,8 @@ Item {
                             leftPadding: 10
                         }
                         onTriggered: {
-                            console.log("View Details Account clicked");
+                            NavigationManager.navigateTo("qrc:/Source/View/ProfileView.qml");
+                            console.log("View Details Account clicked, navigating to ProfileView");
                         }
                     }
                     MenuItem {
@@ -502,9 +465,9 @@ Item {
                                 anchors.fill: parent
                                 anchors.margins: searchResultMargin * scaleFactor
                                 text: {
-                                    let artistsStr = model.artists ? model.artists.join(", ") : "Unknown Artist";
+                                    let artistsStr = model.artists.join(", ");
                                     console.log("Search Result - Title:", model.title, "Artists:", artistsStr);
-                                    return (model.title || "Unknown Title") + " - " + artistsStr;
+                                    return model.title + " - " + artistsStr;
                                 }
                                 font.pixelSize: searchResultFontSize * scaleFactor
                                 color: "#333333"
@@ -524,19 +487,17 @@ Item {
                                 }
                                 onClicked: {
                                     if (songViewModel) {
-                                        let title = model.title || "Unknown Title";
-                                        let artists = model.artists || ["Unknown Artist"];
-                                        songViewModel.playSong(model.id, title, artists);
+                                        songViewModel.playSong(model.id, model.title, model.artists);
                                         AppState.setState({
-                                            title: title,
-                                            artist: artists.join(", "),
-                                            playlistId: -1
+                                            title: model.title,
+                                            artist: model.artists.join(", "),
+                                            playlistId: -1 // Đặt playlistId thành -1 khi phát từ tìm kiếm
                                         });
-                                        songViewModel.fetchAllSongs();
+                                        songViewModel.fetchAllSongs(); // Làm mới danh sách tất cả bài hát
                                         searchResultsView.visible = false;
                                         searchInput.focus = false;
                                         isSearching = false;
-                                        console.log("Selected search result, title:", title, "artists:", artists.join(", "));
+                                        console.log("Selected search result, title:", model.title, "artists:", model.artists.join(", "));
                                     }
                                 }
                             }
@@ -604,7 +565,7 @@ Item {
             spacing: songInfoSpacing * scaleFactor
             width: parent.width * 0.8
             z: 1
-            visible: AppState.currentMediaTitle && AppState.currentMediaTitle !== "Unknown Title"
+            visible: AppState.currentMediaTitle !== "Unknown Title"
             Behavior on opacity {
                 NumberAnimation {
                     duration: 200
@@ -615,7 +576,7 @@ Item {
             Text {
                 id: playlistText
                 Layout.alignment: Qt.AlignHCenter
-                text: AppState.currentPlaylistName || ""
+                text: AppState.currentPlaylistName
                 visible: AppState.currentPlaylistId !== -1
                 font.pixelSize: songInfoArtistSize * scaleFactor
                 color: "#666666"
@@ -625,7 +586,7 @@ Item {
             Text {
                 id: titleText
                 Layout.alignment: Qt.AlignHCenter
-                text: AppState.currentMediaTitle || "Unknown Title"
+                text: AppState.currentMediaTitle
                 font.pixelSize: songInfoTitleSize * scaleFactor
                 color: "#000000"
                 font.bold: true
@@ -636,7 +597,7 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 text: {
                     console.log("Song Info - Artist:", AppState.currentMediaArtist);
-                    return AppState.currentMediaArtist || "Unknown Artist";
+                    return AppState.currentMediaArtist;
                 }
                 font.pixelSize: songInfoArtistSize * scaleFactor
                 color: "#333333"
@@ -651,7 +612,7 @@ Item {
             spacing: songInfoSpacing * scaleFactor
             width: parent.width * 0.8
             z: 1
-            visible: AppState.currentMediaTitle && AppState.currentMediaTitle !== "Unknown Title"
+            visible: AppState.currentMediaTitle !== "Unknown Title"
             Behavior on opacity {
                 NumberAnimation {
                     duration: 200
@@ -866,6 +827,7 @@ Item {
         target: songViewModel
         function onErrorOccurred(error) {
             console.log("MediaPlayerView: Playback error:", error);
+        // Hiển thị thông báo lỗi nếu cần
         }
         function onAllSongsFetched() {
             allSongsLoaded = true;

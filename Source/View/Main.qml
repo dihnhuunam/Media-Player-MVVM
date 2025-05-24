@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
 import QtQuick.Layouts
+import AppState 1.0
 
 ApplicationWindow {
     id: root
@@ -25,5 +26,13 @@ ApplicationWindow {
     Component.onCompleted: {
         NavigationManager.loader = loader;
         console.log("Main: NavigationManager loader set");
+
+        // Kiểm tra trạng thái đăng nhập
+        if (AppState.isAuthenticated) {
+            console.log("Main: User is authenticated, navigating to MediaPlayerView");
+            NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+        } else {
+            console.log("Main: User is not authenticated, staying at LoginView");
+        }
     }
 }
