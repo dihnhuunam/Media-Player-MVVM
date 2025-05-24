@@ -12,9 +12,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 30
+    property real topControlSearchRadius: 12 // Changed to match input field radius
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 24
+    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
     property real topControlSpacing: 30
     property real topControlMargin: 18
 
@@ -55,16 +55,14 @@ Item {
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
     }
 
-    // Chuẩn hóa chuỗi để so sánh
     function normalizeString(str) {
         return str.trim().replace(/\s+/g, " ");
     }
 
-    // Hàm tìm chỉ số bài hát hiện tại
     function findCurrentSongIndex(songList) {
         if (songList.length === 0 || !AppState.currentMediaTitle) {
             console.log("Song list empty or no current song");
-            return 0; // Bắt đầu từ bài đầu tiên nếu không tìm thấy
+            return 0;
         }
         let normalizedTitle = normalizeString(AppState.currentMediaTitle);
         let normalizedArtist = normalizeString(AppState.currentMediaArtist);
@@ -77,10 +75,9 @@ Item {
             }
         }
         console.log("Current song not found in list, defaulting to index 0");
-        return 0; // Nếu không tìm thấy, chọn bài đầu tiên
+        return 0;
     }
 
-    // Hàm phát bài hát tại chỉ số cụ thể
     function playSongAtIndex(songList, index) {
         if (index < 0 || index >= songList.length) {
             console.log("Invalid song index:", index);
@@ -98,7 +95,6 @@ Item {
         console.log("Playing song at index:", index, "Title:", song.title, "Artists:", artistsStr);
     }
 
-    // Hàm lấy danh sách bài hát từ SongModel
     function getAllSongsFromModel() {
         let songs = [];
         if (songViewModel && songViewModel.songModel && allSongsLoaded) {
@@ -116,7 +112,6 @@ Item {
         return songs;
     }
 
-    // Hàm xử lý nút Next
     function handleNext() {
         let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
         if (songList.length === 0) {
@@ -126,22 +121,19 @@ Item {
 
         let currentIndex = findCurrentSongIndex(songList);
         if (repeatMode === 1) {
-            // Repeat one: Phát lại bài hiện tại
             playSongAtIndex(songList, currentIndex);
         } else {
             let nextIndex;
             if (shuffle) {
-                // Shuffle: Chọn ngẫu nhiên một bài khác
                 nextIndex = Math.floor(Math.random() * songList.length);
                 while (nextIndex === currentIndex && songList.length > 1) {
                     nextIndex = Math.floor(Math.random() * songList.length);
                 }
             } else {
-                // Không shuffle: Chuyển đến bài tiếp theo
                 nextIndex = currentIndex + 1;
                 if (nextIndex >= songList.length) {
                     if (repeatMode === 2) {
-                        nextIndex = 0; // Repeat all: Quay lại đầu
+                        nextIndex = 0;
                     } else {
                         console.log("Reached end of song list, stopping");
                         return;
@@ -152,7 +144,6 @@ Item {
         }
     }
 
-    // Hàm xử lý nút Previous
     function handlePrevious() {
         let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
         if (songList.length === 0) {
@@ -162,22 +153,19 @@ Item {
 
         let currentIndex = findCurrentSongIndex(songList);
         if (repeatMode === 1) {
-            // Repeat one: Phát lại bài hiện tại
             playSongAtIndex(songList, currentIndex);
         } else {
             let prevIndex;
             if (shuffle) {
-                // Shuffle: Chọn ngẫu nhiên một bài khác
                 prevIndex = Math.floor(Math.random() * songList.length);
                 while (prevIndex === currentIndex && songList.length > 1) {
                     prevIndex = Math.floor(Math.random() * songList.length);
                 }
             } else {
-                // Không shuffle: Chuyển đến bài trước
                 prevIndex = currentIndex - 1;
                 if (prevIndex < 0) {
                     if (repeatMode === 2) {
-                        prevIndex = songList.length - 1; // Repeat all: Quay lại cuối
+                        prevIndex = songList.length - 1;
                     } else {
                         console.log("Reached start of song list, stopping");
                         return;
@@ -216,7 +204,16 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "white"
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: "#f5f7fa"
+            }
+            GradientStop {
+                position: 1.0
+                color: "#e8ecef"
+            }
+        }
 
         ColumnLayout {
             anchors.top: parent.top
@@ -236,11 +233,16 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: folderDialog.open()
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/folder.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -252,11 +254,16 @@ Item {
                         NavigationManager.navigateTo("qrc:/Source/View/PlaylistView.qml");
                         console.log("Navigate to PlaylistView");
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/playlist.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -264,7 +271,9 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
                     radius: topControlSearchRadius * scaleFactor
-                    color: "#e0e0e0"
+                    color: "#f6f8fa"
+                    border.color: searchInput.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: searchInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     MouseArea {
                         anchors.fill: parent
@@ -289,14 +298,16 @@ Item {
                             Layout.preferredWidth: topControlSearchIconSize * scaleFactor
                             Layout.preferredHeight: topControlSearchIconSize * scaleFactor
                             Layout.alignment: Qt.AlignVCenter
+                            opacity: 0.8
                         }
 
                         TextInput {
                             id: searchInput
                             Layout.fillWidth: true
                             text: "Search"
-                            color: "#666666"
+                            color: "#2d3748"
                             font.pixelSize: topControlSearchFontSize * scaleFactor
+                            font.family: "Arial"
                             verticalAlignment: TextInput.AlignVCenter
                             onActiveFocusChanged: {
                                 if (activeFocus && text === "Search") {
@@ -336,7 +347,7 @@ Item {
                                     AppState.setState({
                                         title: title,
                                         artist: artists.join(", "),
-                                        playlistId: -1 // Đặt playlistId thành -1 khi phát từ tìm kiếm
+                                        playlistId: -1
                                     });
                                     searchResultsView.visible = false;
                                     searchInput.focus = false;
@@ -354,11 +365,16 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: profileMenu.open()
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/profile.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -370,9 +386,9 @@ Item {
 
                     background: Rectangle {
                         color: "#ffffff"
-                        border.color: "#e0e0e0"
+                        border.color: "#d0d7de"
                         border.width: 1
-                        radius: 5
+                        radius: 8
                     }
 
                     MenuItem {
@@ -380,10 +396,14 @@ Item {
                         contentItem: Text {
                             text: parent.text
                             font.pixelSize: 16 * scaleFactor
-                            color: "#333333"
+                            font.family: "Arial"
+                            color: "#2d3748"
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignLeft
                             leftPadding: 10
+                        }
+                        background: Rectangle {
+                            color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
                             NavigationManager.navigateTo("qrc:/Source/View/ProfileView.qml");
@@ -395,10 +415,14 @@ Item {
                         contentItem: Text {
                             text: parent.text
                             font.pixelSize: 16 * scaleFactor
-                            color: "#333333"
+                            font.family: "Arial"
+                            color: "#2d3748"
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignLeft
                             leftPadding: 10
+                        }
+                        background: Rectangle {
+                            color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
                             console.log("Setting clicked");
@@ -409,10 +433,14 @@ Item {
                         contentItem: Text {
                             text: parent.text
                             font.pixelSize: 16 * scaleFactor
-                            color: "#333333"
+                            font.family: "Arial"
+                            color: "#2d3748"
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignLeft
                             leftPadding: 10
+                        }
+                        background: Rectangle {
+                            color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
                             NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
@@ -458,7 +486,7 @@ Item {
                             width: searchResultsView.width
                             height: searchResultItemHeight * scaleFactor
                             color: mouseArea.containsMouse ? "#f0f0f0" : "#ffffff"
-                            border.color: "#e0e0e0"
+                            border.color: "#d0d7de"
                             border.width: 1
 
                             Text {
@@ -470,7 +498,8 @@ Item {
                                     return model.title + " - " + artistsStr;
                                 }
                                 font.pixelSize: searchResultFontSize * scaleFactor
-                                color: "#333333"
+                                font.family: "Arial"
+                                color: "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 elide: Text.ElideRight
                             }
@@ -491,9 +520,9 @@ Item {
                                         AppState.setState({
                                             title: model.title,
                                             artist: model.artists.join(", "),
-                                            playlistId: -1 // Đặt playlistId thành -1 khi phát từ tìm kiếm
+                                            playlistId: -1
                                         });
-                                        songViewModel.fetchAllSongs(); // Làm mới danh sách tất cả bài hát
+                                        songViewModel.fetchAllSongs();
                                         searchResultsView.visible = false;
                                         searchInput.focus = false;
                                         isSearching = false;
@@ -508,12 +537,13 @@ Item {
                 Component {
                     id: loadingComponent
                     Rectangle {
-                        color: "#f0f0f0"
+                        color: "#f6f8fa"
                         Text {
                             anchors.centerIn: parent
                             text: "Searching..."
                             font.pixelSize: searchResultFontSize * scaleFactor
-                            color: "#666666"
+                            font.family: "Arial"
+                            color: "#2d3748"
                         }
                     }
                 }
@@ -521,12 +551,13 @@ Item {
                 Component {
                     id: noResultsComponent
                     Rectangle {
-                        color: "#f0f0f0"
+                        color: "#f6f8fa"
                         Text {
                             anchors.centerIn: parent
                             text: "No songs found"
                             font.pixelSize: searchResultFontSize * scaleFactor
-                            color: "#666666"
+                            font.family: "Arial"
+                            color: "#2d3748"
                         }
                     }
                 }
@@ -579,8 +610,9 @@ Item {
                 text: AppState.currentPlaylistName
                 visible: AppState.currentPlaylistId !== -1
                 font.pixelSize: songInfoArtistSize * scaleFactor
-                color: "#666666"
-                font.bold: true
+                font.family: "Arial"
+                font.weight: Font.Medium
+                color: "#2d3748"
             }
 
             Text {
@@ -588,8 +620,9 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 text: AppState.currentMediaTitle
                 font.pixelSize: songInfoTitleSize * scaleFactor
-                color: "#000000"
-                font.bold: true
+                font.family: "Arial"
+                font.weight: Font.Bold
+                color: "#1a202c"
             }
 
             Text {
@@ -600,7 +633,8 @@ Item {
                     return AppState.currentMediaArtist;
                 }
                 font.pixelSize: songInfoArtistSize * scaleFactor
-                color: "#333333"
+                font.family: "Arial"
+                color: "#2d3748"
             }
         }
 
@@ -630,7 +664,8 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 text: (songViewModel ? formatDuration(songViewModel.position) : "0:00") + " / " + (songViewModel ? formatDuration(songViewModel.duration) : "0:00")
                 font.pixelSize: songInfoTimeSize * scaleFactor
-                color: "#666666"
+                font.family: "Arial"
+                color: "#2d3748"
             }
 
             SliderComponent {
@@ -641,11 +676,11 @@ Item {
                 maxValue: songViewModel ? songViewModel.duration : 0
                 step: 1000
                 value: songViewModel ? songViewModel.position : 0
-                backgroundColor: "#cccccc"
-                fillColor: "#000000"
+                backgroundColor: "#e2e8f0"
+                fillColor: "#2b6cb0"
                 handleColor: "#ffffff"
-                handlePressedColor: "#000000"
-                borderColor: "#000000"
+                handlePressedColor: "#3182ce"
+                borderColor: "#d0d7de"
                 onValueChanged: {
                     if (pressed && songViewModel) {
                         songViewModel.setPosition(value);
@@ -667,12 +702,16 @@ Item {
                         shuffle = !shuffle;
                         console.log("Shuffle Button Clicked, enabled:", shuffle);
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: "qrc:/Assets/shuffle.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: shuffle ? 1.0 : 0.5
+                        opacity: shuffle ? 1.0 : 0.8
                     }
                 }
 
@@ -684,11 +723,16 @@ Item {
                         handlePrevious();
                         console.log("Previous Button Clicked");
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: "qrc:/Assets/prev.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -708,11 +752,16 @@ Item {
                             console.log(songViewModel.isPlaying ? "Pause Button Clicked" : "Play Button Clicked");
                         }
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: playButton.imageSource
                         width: controlPlayIconSize * scaleFactor
                         height: controlPlayIconSize * scaleFactor
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -724,11 +773,16 @@ Item {
                         handleNext();
                         console.log("Next Button Clicked");
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: "qrc:/Assets/next.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -740,12 +794,16 @@ Item {
                         repeatMode = (repeatMode + 1) % 3;
                         console.log("Repeat Button Clicked, mode:", repeatMode);
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: repeatMode === 1 ? "qrc:/Assets/repeat-one.png" : "qrc:/Assets/repeat.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: repeatMode > 0 ? 1.0 : 0.5
+                        opacity: repeatMode > 0 ? 1.0 : 0.8
                     }
                 }
             }
@@ -771,11 +829,16 @@ Item {
                             console.log("Volume Button Clicked, muted:", muted, "volume:", songViewModel.volume);
                         }
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         anchors.centerIn: parent
                         source: muted || (songViewModel && songViewModel.volume === 0) ? "qrc:/Assets/muted.png" : "qrc:/Assets/volume.png"
                         width: volumeIconSize * scaleFactor
                         height: volumeIconSize * scaleFactor
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -787,11 +850,11 @@ Item {
                     maxValue: 1.0
                     step: 0.1
                     value: songViewModel ? songViewModel.volume : 0.5
-                    backgroundColor: "#cccccc"
-                    fillColor: "#000000"
+                    backgroundColor: "#e2e8f0"
+                    fillColor: "#2b6cb0"
                     handleColor: "#ffffff"
-                    handlePressedColor: "#000000"
-                    borderColor: "#000000"
+                    handlePressedColor: "#3182ce"
+                    borderColor: "#d0d7de"
                     onValueChanged: {
                         if (songViewModel) {
                             songViewModel.setVolume(value);
@@ -827,7 +890,6 @@ Item {
         target: songViewModel
         function onErrorOccurred(error) {
             console.log("MediaPlayerView: Playback error:", error);
-        // Hiển thị thông báo lỗi nếu cần
         }
         function onAllSongsFetched() {
             allSongsLoaded = true;

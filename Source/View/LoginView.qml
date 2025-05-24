@@ -14,15 +14,24 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#ffffff"
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: "#f5f7fa"
+            }
+            GradientStop {
+                position: 1.0
+                color: "#e8ecef"
+            }
+        }
 
         Rectangle {
             anchors.centerIn: parent
             width: formWidth * scaleFactor
-            height: formHeight * scaleFactor 
-            radius: 30 * scaleFactor
-            border.color: "#e0e0e0"
-            border.width: 2 * scaleFactor
+            height: formHeight * scaleFactor
+            radius: 20 * scaleFactor
+            border.color: "#d0d7de"
+            border.width: 1 * scaleFactor
             color: "#ffffff"
 
             ColumnLayout {
@@ -33,8 +42,9 @@ Item {
                 Text {
                     text: "Login"
                     font.pixelSize: 34 * scaleFactor
-                    font.bold: true
-                    color: "#000000"
+                    font.family: "Arial"
+                    font.weight: Font.Medium
+                    color: "#1a202c"
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -43,19 +53,20 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     color: notificationRect.notificationColor
-                    radius: 15 * scaleFactor
+                    radius: 8 * scaleFactor
                     visible: notificationRect.isVisible
 
                     property bool isVisible: false
                     property bool isPersistent: false
                     property string message: ""
-                    property color notificationColor: "#CC4CAF50"
+                    property color notificationColor: "#48bb78"
 
                     Text {
                         anchors.centerIn: parent
                         text: notificationRect.message
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#FFFFFF"
+                        font.family: "Arial"
+                        color: "#ffffff"
                         wrapMode: Text.Wrap
                     }
 
@@ -72,17 +83,20 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 30 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: emailField.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: emailField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     TextField {
                         id: emailField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         placeholderText: "Email"
-                        placeholderTextColor: "#666666"
+                        placeholderTextColor: "#a0aec0"
                         verticalAlignment: Text.AlignVCenter
                         background: null
                         onFocusChanged: {
@@ -94,17 +108,20 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 30 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: passwordField.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: passwordField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     TextField {
                         id: passwordField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         placeholderText: "Password"
-                        placeholderTextColor: "#666666"
+                        placeholderTextColor: "#a0aec0"
                         verticalAlignment: Text.AlignVCenter
                         echoMode: TextInput.Password
                         background: null
@@ -118,37 +135,52 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     text: "Login"
-                    defaultColor: "#212121"
-                    hoverColor: "#424242"
-                    radius: 30 * scaleFactor
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         authViewModel.loginUser(emailField.text, passwordField.text);
                         console.log("Login button clicked, email:", emailField.text);
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "#FFFFFF"
+                        color: "#ffffff"
                         font: parent.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
+                        }
                     }
                 }
 
                 Text {
                     text: "Don't have an account? Register"
                     font.pixelSize: 15 * scaleFactor
-                    color: "#212121"
+                    font.family: "Arial"
+                    color: "#2b6cb0"
                     Layout.alignment: Qt.AlignHCenter
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: {
-                            parent.color = "#757575";
+                            parent.color = "#3182ce";
                             parent.font.underline = true;
                         }
                         onExited: {
-                            parent.color = "#212121";
+                            parent.color = "#2b6cb0";
                             parent.font.underline = false;
                         }
                         onClicked: {
@@ -161,17 +193,18 @@ Item {
                 Text {
                     text: "Skip"
                     font.pixelSize: 15 * scaleFactor
-                    color: "#212121"
+                    font.family: "Arial"
+                    color: "#2b6cb0"
                     Layout.alignment: Qt.AlignHCenter
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: {
-                            parent.color = "#757575";
+                            parent.color = "#3182ce";
                             parent.font.underline = true;
                         }
                         onExited: {
-                            parent.color = "#212121";
+                            parent.color = "#2b6cb0";
                             parent.font.underline = false;
                         }
                         onClicked: {
@@ -188,8 +221,8 @@ Item {
         target: authViewModel
         function onLoginFinished(success, message) {
             console.log("Login message:", message);
-            notificationRect.message = success ? "Login Success" : "Login Failed. Please Try Again";
-            notificationRect.notificationColor = success ? "#CC4CAF50" : "#CCF44336";
+            notificationRect.message = success ? "Login Success" : message || "Login Failed. Please Try Again";
+            notificationRect.notificationColor = success ? "#48bb78" : "#e53e3e";
             notificationRect.isPersistent = !success;
             notificationRect.isVisible = true;
             if (success) {

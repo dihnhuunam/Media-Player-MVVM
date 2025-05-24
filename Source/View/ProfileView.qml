@@ -56,27 +56,36 @@ Item {
     function parseDOBToSend(day, month, year) {
         if (!day || !month || !year) {
             console.log("Invalid DOB components for sending:", day, month, year);
-            return AppState.dateOfBirth; // Keep original value if invalid
+            return AppState.dateOfBirth;
         }
         let dobStr = `${day}/${month}/${year}`;
         if (!/\d{2}\/\d{2}\/\d{4}/.test(dobStr)) {
             console.log("Invalid DOB format for sending:", dobStr);
             return AppState.dateOfBirth;
         }
-        return `${year}-${month}-${day}`; // YYYY-MM-DD
+        return `${year}-${month}-${day}`;
     }
 
     Rectangle {
         anchors.fill: parent
-        color: "#ffffff"
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: "#f5f7fa"
+            }
+            GradientStop {
+                position: 1.0
+                color: "#e8ecef"
+            }
+        }
 
         Rectangle {
             anchors.centerIn: parent
             width: formWidth * scaleFactor
             height: formHeight * scaleFactor
-            radius: 30 * scaleFactor
-            border.color: "#e0e0e0"
-            border.width: 2 * scaleFactor
+            radius: 20 * scaleFactor
+            border.color: "#d0d7de"
+            border.width: 1 * scaleFactor
             color: "#ffffff"
 
             ColumnLayout {
@@ -97,19 +106,25 @@ Item {
                             NavigationManager.goBack();
                             console.log("Back button clicked");
                         }
+                        background: Rectangle {
+                            color: parent.hovered ? "#e6e9ec" : "transparent"
+                            radius: 10 * scaleFactor
+                        }
                         Image {
                             source: "qrc:/Assets/back.png"
                             width: topControlIconSize * scaleFactor
                             height: topControlIconSize * scaleFactor
                             anchors.centerIn: parent
+                            opacity: parent.hovered ? 1.0 : 0.8
                         }
                     }
 
                     Text {
                         text: "Profile"
                         font.pixelSize: 34 * scaleFactor
-                        font.bold: true
-                        color: "#000000"
+                        font.family: "Arial"
+                        font.weight: Font.Medium
+                        color: "#1a202c"
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     }
                 }
@@ -117,19 +132,22 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: emailField.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: emailField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     TextField {
                         id: emailField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         text: AppState.email
                         enabled: false
                         placeholderText: "Email"
-                        placeholderTextColor: "#666666"
+                        placeholderTextColor: "#a0aec0"
                         verticalAlignment: Text.AlignVCenter
                         background: null
                     }
@@ -138,18 +156,21 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: nameField.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: nameField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     TextField {
                         id: nameField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         text: AppState.name
                         placeholderText: "Full Name"
-                        placeholderTextColor: "#666666"
+                        placeholderTextColor: "#a0aec0"
                         verticalAlignment: Text.AlignVCenter
                         background: null
                         onFocusChanged: {
@@ -161,8 +182,10 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: dayComboBox.activeFocus || monthComboBox.activeFocus || yearComboBox.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: (dayComboBox.activeFocus || monthComboBox.activeFocus || yearComboBox.activeFocus) ? 2 * scaleFactor : 1 * scaleFactor
 
                     RowLayout {
                         anchors.fill: parent
@@ -174,9 +197,10 @@ Item {
                             Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
                             Layout.fillHeight: true
                             font.pixelSize: formFieldFontSize * scaleFactor
+                            font.family: "Arial"
                             model: Array.from({
                                 length: 31
-                            }, (_, i) => ("0" + (i + 1)).slice(-2)) // 01 to 31
+                            }, (_, i) => ("0" + (i + 1)).slice(-2))
                             currentIndex: parseInt(formatDOB(AppState.dateOfBirth).day) - 1
                             background: Rectangle {
                                 color: "transparent"
@@ -184,7 +208,7 @@ Item {
                             contentItem: Text {
                                 text: dayComboBox.displayText
                                 font: dayComboBox.font
-                                color: "#333333"
+                                color: "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -198,9 +222,10 @@ Item {
                             Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
                             Layout.fillHeight: true
                             font.pixelSize: formFieldFontSize * scaleFactor
+                            font.family: "Arial"
                             model: Array.from({
                                 length: 12
-                            }, (_, i) => ("0" + (i + 1)).slice(-2)) // 01 to 12
+                            }, (_, i) => ("0" + (i + 1)).slice(-2))
                             currentIndex: parseInt(formatDOB(AppState.dateOfBirth).month) - 1
                             background: Rectangle {
                                 color: "transparent"
@@ -208,7 +233,7 @@ Item {
                             contentItem: Text {
                                 text: monthComboBox.displayText
                                 font: monthComboBox.font
-                                color: "#333333"
+                                color: "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -222,9 +247,10 @@ Item {
                             Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
                             Layout.fillHeight: true
                             font.pixelSize: formFieldFontSize * scaleFactor
+                            font.family: "Arial"
                             model: Array.from({
                                 length: 100
-                            }, (_, i) => (2025 - i).toString()) // From 2025 to 1926
+                            }, (_, i) => (2025 - i).toString())
                             currentIndex: 2025 - parseInt(formatDOB(AppState.dateOfBirth).year)
                             background: Rectangle {
                                 color: "transparent"
@@ -232,7 +258,7 @@ Item {
                             contentItem: Text {
                                 text: yearComboBox.displayText
                                 font: yearComboBox.font
-                                color: "#333333"
+                                color: "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -246,19 +272,22 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: passwordField.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: passwordField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     TextField {
                         id: passwordField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         text: "••••••••"
                         enabled: false
                         placeholderText: "Password"
-                        placeholderTextColor: "#666666"
+                        placeholderTextColor: "#a0aec0"
                         verticalAlignment: Text.AlignVCenter
                         background: null
                     }
@@ -267,17 +296,18 @@ Item {
                 Text {
                     text: "Change Password"
                     font.pixelSize: 15 * scaleFactor
-                    color: "#212121"
+                    font.family: "Arial"
+                    color: "#2b6cb0"
                     Layout.alignment: Qt.AlignHCenter
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: {
-                            parent.color = "#757575";
+                            parent.color = "#3182ce";
                             parent.font.underline = true;
                         }
                         onExited: {
-                            parent.color = "#212121";
+                            parent.color = "#2b6cb0";
                             parent.font.underline = false;
                         }
                         onClicked: {
@@ -291,10 +321,11 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     text: "Update Profile"
-                    defaultColor: "#212121"
-                    hoverColor: "#424242"
-                    radius: 30 * scaleFactor
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         let dobToSend = parseDOBToSend(dayComboBox.currentText, monthComboBox.currentText, yearComboBox.currentText);
                         console.log("Sending DOB to updateProfile:", dobToSend);
@@ -302,10 +333,23 @@ Item {
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "#FFFFFF"
+                        color: "#ffffff"
                         font: parent.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
+                        }
                     }
                 }
             }
@@ -323,9 +367,9 @@ Item {
 
         background: Rectangle {
             color: "#ffffff"
-            radius: 15 * scaleFactor
-            border.color: "#e0e0e0"
-            border.width: 2 * scaleFactor
+            radius: 12 * scaleFactor
+            border.color: "#d0d7de"
+            border.width: 1 * scaleFactor
         }
 
         ColumnLayout {
@@ -336,25 +380,29 @@ Item {
             Text {
                 text: "Change Password"
                 font.pixelSize: 24 * scaleFactor
-                font.bold: true
-                color: "#000000"
+                font.family: "Arial"
+                font.weight: Font.Medium
+                color: "#1a202c"
                 Layout.alignment: Qt.AlignHCenter
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
+                radius: 12 * scaleFactor
+                color: "#f6f8fa"
+                border.color: currentPasswordField.activeFocus ? "#3182ce" : "#d0d7de"
+                border.width: currentPasswordField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                 TextField {
                     id: currentPasswordField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
+                    font.family: "Arial"
+                    color: "#2d3748"
                     placeholderText: "Current Password"
-                    placeholderTextColor: "#666666"
+                    placeholderTextColor: "#a0aec0"
                     verticalAlignment: Text.AlignVCenter
                     echoMode: TextInput.Password
                     background: null
@@ -367,17 +415,20 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
+                radius: 12 * scaleFactor
+                color: "#f6f8fa"
+                border.color: newPasswordField.activeFocus ? "#3182ce" : "#d0d7de"
+                border.width: newPasswordField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                 TextField {
                     id: newPasswordField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
+                    font.family: "Arial"
+                    color: "#2d3748"
                     placeholderText: "New Password"
-                    placeholderTextColor: "#666666"
+                    placeholderTextColor: "#a0aec0"
                     verticalAlignment: Text.AlignVCenter
                     echoMode: TextInput.Password
                     background: null
@@ -390,17 +441,20 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: formFieldHeight * scaleFactor
-                radius: 25 * scaleFactor
-                color: "#e0e0e0"
+                radius: 12 * scaleFactor
+                color: "#f6f8fa"
+                border.color: confirmPasswordField.activeFocus ? "#3182ce" : "#d0d7de"
+                border.width: confirmPasswordField.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                 TextField {
                     id: confirmPasswordField
                     anchors.fill: parent
                     anchors.margins: 8 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
-                    color: "#333333"
+                    font.family: "Arial"
+                    color: "#2d3748"
                     placeholderText: "Confirm New Password"
-                    placeholderTextColor: "#666666"
+                    placeholderTextColor: "#a0aec0"
                     verticalAlignment: Text.AlignVCenter
                     echoMode: TextInput.Password
                     background: null
@@ -419,10 +473,11 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     text: "Cancel"
-                    defaultColor: "#e0e0e0"
-                    hoverColor: "#cccccc"
-                    radius: 15 * scaleFactor
+                    defaultColor: "#edf2f7"
+                    hoverColor: "#e2e8f0"
+                    radius: 12 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         currentPasswordField.text = "";
                         newPasswordField.text = "";
@@ -432,10 +487,14 @@ Item {
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "#333333"
+                        color: "#2d3748"
                         font: parent.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        color: parent.hovered ? parent.hoverColor : parent.defaultColor
                     }
                 }
 
@@ -443,30 +502,43 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     text: "Confirm"
-                    defaultColor: "#212121"
-                    hoverColor: "#424242"
-                    radius: 15 * scaleFactor
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         if (newPasswordField.text !== "" && newPasswordField.text !== confirmPasswordField.text) {
                             notificationPopup.message = "Passwords do not match";
-                            notificationPopup.color = "#F44336";
+                            notificationPopup.color = "#e53e3e";
                             notificationPopup.open();
                         } else if (currentPasswordField.text === "") {
                             notificationPopup.message = "Current Password is required";
-                            notificationPopup.color = "#F44336";
+                            notificationPopup.color = "#e53e3e";
                             notificationPopup.open();
                         } else {
-                            // Only send password fields for password change
                             authViewModel.updateProfile(AppState.userId, "", "", currentPasswordField.text, newPasswordField.text);
                         }
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: "#FFFFFF"
+                        color: "#ffffff"
                         font: parent.font
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
+                        }
                     }
                 }
             }
@@ -482,18 +554,19 @@ Item {
         modal: true
         focus: true
         property string message: ""
-        property color color: "#4CAF50"
+        property color color: "#48bb78"
 
         background: Rectangle {
             color: notificationPopup.color
-            radius: 5
+            radius: 8 * scaleFactor
         }
 
         Text {
             anchors.centerIn: parent
             text: notificationPopup.message
             font.pixelSize: formFieldFontSize * scaleFactor
-            color: "#FFFFFF"
+            font.family: "Arial"
+            color: "#ffffff"
         }
 
         Timer {
@@ -507,7 +580,7 @@ Item {
         target: authViewModel
         function onProfileUpdateFinished(success, message) {
             notificationPopup.message = message;
-            notificationPopup.color = success ? "#4CAF50" : "#F44336";
+            notificationPopup.color = success ? "#48bb78" : "#e53e3e";
             notificationPopup.open();
             if (success) {
                 currentPasswordField.text = "";
@@ -515,9 +588,9 @@ Item {
                 confirmPasswordField.text = "";
                 changePasswordPopup.close();
                 AppState.setName(nameField.text);
-                let dobToSave = parseDOBToSend(dayComboBox.currentText, monthComboBox.currentText, yearComboBox.currentText);
-                console.log("Saving DOB to AppState:", dobToSave);
-                AppState.setDateOfBirth(dobToSave);
+                let dobToSend = parseDOBToSend(dayComboBox.currentText, monthComboBox.currentText, yearComboBox.currentText);
+                console.log("Saving DOB to AppState:", dobToSend);
+                AppState.setDateOfBirth(dobToSend);
             }
         }
     }

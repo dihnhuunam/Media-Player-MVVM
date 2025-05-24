@@ -20,6 +20,7 @@
         <file>Assets/more.png</file>
         <file>Assets/muted.png</file>
         <file>Assets/profile.png</file>
+        <file>Assets/delete.png</file>
         <!-- Components -->
         <file>Source/View/Components/HoverButton.qml</file>
         <file>Source/View/Components/SliderComponent.qml</file>

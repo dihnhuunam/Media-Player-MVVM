@@ -11,9 +11,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 30
+    property real topControlSearchRadius: 12 // Aligned with input field radius
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 24
+    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
     property real topControlSpacing: 30
     property real topControlMargin: 18
     property real topControlTopMargin: 20
@@ -37,7 +37,6 @@ Item {
             console.log("Selected files:", fileDialog.selectedFiles);
             let newFiles = [];
             for (let i = 0; i < fileDialog.selectedFiles.length; i++) {
-                // Assume songId will be assigned by the server, temporarily set to 0
                 let songId = 0;
                 playlistViewModel.addSongToPlaylist(AppState.currentPlaylistId, songId);
                 newFiles.push({
@@ -74,39 +73,18 @@ Item {
         }
     }
 
-    Popup {
-        id: notificationPopup
-        x: (parent.width - width) / 2
-        y: (parent.height - height) / 2
-        width: 300 * scaleFactor
-        height: 100 * scaleFactor
-        modal: true
-        focus: true
-        property string text: ""
-        property color color: "#4CAF50"
-
-        background: Rectangle {
-            color: notificationPopup.color
-            radius: 5
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: notificationPopup.text
-            font.pixelSize: mediaItemFontSize * scaleFactor
-            color: "#FFFFFF"
-        }
-
-        Timer {
-            interval: 2000
-            running: notificationPopup.visible
-            onTriggered: notificationPopup.close()
-        }
-    }
-
     Rectangle {
         anchors.fill: parent
-        color: "#ffffff"
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: "#f5f7fa"
+            }
+            GradientStop {
+                position: 1.0
+                color: "#e8ecef"
+            }
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -129,11 +107,16 @@ Item {
                         console.log("Back button clicked, navigating back");
                         NavigationManager.goBack();
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/back.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -141,7 +124,9 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
                     radius: topControlSearchRadius * scaleFactor
-                    color: "#e0e0e0"
+                    color: "#f6f8fa"
+                    border.color: searchInput.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: searchInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     MouseArea {
                         anchors.fill: parent
@@ -161,14 +146,16 @@ Item {
                             source: "qrc:/Assets/search.png"
                             Layout.preferredWidth: topControlSearchIconSize * scaleFactor
                             Layout.preferredHeight: topControlSearchIconSize * scaleFactor
+                            opacity: 0.8
                         }
 
                         TextInput {
                             id: searchInput
                             Layout.fillWidth: true
                             text: "Search Songs"
-                            color: "#666666"
+                            color: "#2d3748"
                             font.pixelSize: topControlSearchFontSize * scaleFactor
+                            font.family: "Arial"
                             onActiveFocusChanged: {
                                 if (activeFocus && text === "Search Songs") {
                                     text = "";
@@ -194,11 +181,16 @@ Item {
                         fileDialog.open();
                         console.log("Add song button clicked");
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/add.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
             }
@@ -216,8 +208,9 @@ Item {
                     id: mediaTitle
                     text: AppState.currentPlaylistName
                     font.pixelSize: mediaTitleFontSize * scaleFactor
-                    font.bold: true
-                    color: "#000000"
+                    font.family: "Arial"
+                    font.weight: Font.Bold
+                    color: "#1a202c"
                     Layout.fillWidth: true
                     Layout.leftMargin: mediaItemMargin * scaleFactor
                     Layout.rightMargin: mediaItemMargin * scaleFactor
@@ -240,39 +233,36 @@ Item {
                     delegate: Rectangle {
                         width: mediaFileView.width
                         height: mediaItemHeight * scaleFactor
-                        color: index % 2 === 0 ? "#f0f0f0" : "#ffffff"
+                        color: mouseArea.containsMouse ? "#f0f0f0" : "#ffffff"
+                        border.color: "#d0d7de"
+                        border.width: 1
 
                         RowLayout {
                             anchors.fill: parent
-                            spacing: mediaSpacing * scaleFactor
+                            anchors.leftMargin: 10 * scaleFactor
+                            anchors.rightMargin: 10 * scaleFactor
+                            spacing: 8 * scaleFactor
 
                             Text {
-                                text: (currentPage * itemsPerPage + index + 1).toString()
+                                text: (currentPage * itemsPerPage + index + 1) + ". " + modelData.title + " - " + (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist")
                                 font.pixelSize: mediaItemFontSize * scaleFactor
-                                color: "#666666"
-                                Layout.leftMargin: mediaItemMargin * scaleFactor
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            Text {
-                                text: modelData.title + " - " + (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist")
-                                font.pixelSize: mediaItemFontSize * scaleFactor
-                                color: "#333333"
+                                font.family: "Arial"
+                                color: "#2d3748"
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignVCenter
+                                elide: Text.ElideRight
                                 MouseArea {
+                                    id: mouseArea
                                     anchors.fill: parent
+                                    hoverEnabled: true
                                     onClicked: {
-                                        // Update AppState
                                         AppState.setState({
                                             title: modelData.title,
                                             artist: modelData.artists ? modelData.artists.join(", ") : "Unknown Artist",
                                             filePath: modelData.file_path,
                                             playlistId: AppState.currentPlaylistId
                                         });
-                                        // Play the song using SongViewModel
                                         songViewModel.playSong(modelData.id, modelData.title, modelData.artists);
-                                        // Navigate to MediaPlayerView
                                         NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
                                         console.log("Selected song:", modelData.title, "Artists:", modelData.artists.join(", "), "Playing and navigated to MediaPlayerView");
                                     }
@@ -287,11 +277,16 @@ Item {
                                     playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, modelData.id);
                                     console.log("Removed song:", modelData.title, "from playlist ID:", AppState.currentPlaylistId);
                                 }
+                                background: Rectangle {
+                                    color: parent.hovered ? "#e6e9ec" : "transparent"
+                                    radius: 10 * scaleFactor
+                                }
                                 Image {
                                     source: "qrc:/Assets/delete.png"
                                     width: mediaItemFontSize * scaleFactor
                                     height: mediaItemFontSize * scaleFactor
                                     anchors.centerIn: parent
+                                    opacity: parent.hovered ? 1.0 : 0.8
                                 }
                             }
                         }
@@ -301,7 +296,8 @@ Item {
                         anchors.centerIn: parent
                         text: "No songs in this playlist"
                         font.pixelSize: mediaItemFontSize * scaleFactor
-                        color: "#666666"
+                        font.family: "Arial"
+                        color: "#2d3748"
                         visible: AppState.currentMediaFiles.length === 0
                     }
 
@@ -328,24 +324,43 @@ Item {
                         enabled: currentPage > 0
                         Layout.preferredWidth: 100 * scaleFactor
                         Layout.preferredHeight: 40 * scaleFactor
-                        contentItem: Text {
-                            text: parent.text
-                            color: parent.enabled ? "#0078D7" : "#666666"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            font.pixelSize: mediaItemFontSize * scaleFactor
-                        }
+                        defaultColor: "#2b6cb0"
+                        hoverColor: "#3182ce"
+                        radius: 12 * scaleFactor
+                        font.pixelSize: mediaItemFontSize * scaleFactor
+                        font.family: "Arial"
                         onClicked: {
                             currentPage--;
                             mediaFileView.model = getCurrentPageItems();
                             console.log("Previous page, current:", currentPage + 1);
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: parent.enabled ? "#ffffff" : "#a0aec0"
+                            font: parent.font
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            radius: parent.radius
+                            gradient: Gradient {
+                                GradientStop {
+                                    position: 0.0
+                                    color: parent.enabled ? (parent.hovered ? "#3182ce" : "#2b6cb0") : "#e2e8f0"
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: parent.enabled ? (parent.hovered ? "#2c5282" : "#2a4365") : "#e2e8f0"
+                                }
+                            }
                         }
                     }
 
                     Text {
                         text: totalPages > 0 ? ("Page " + (currentPage + 1) + " of " + totalPages) : "No pages"
                         font.pixelSize: mediaItemFontSize * scaleFactor
-                        color: "#333333"
+                        font.family: "Arial"
+                        color: "#2d3748"
                     }
 
                     HoverButton {
@@ -353,17 +368,35 @@ Item {
                         enabled: currentPage < totalPages - 1
                         Layout.preferredWidth: 100 * scaleFactor
                         Layout.preferredHeight: 40 * scaleFactor
-                        contentItem: Text {
-                            text: parent.text
-                            color: parent.enabled ? "#0078D7" : "#666666"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            font.pixelSize: mediaItemFontSize * scaleFactor
-                        }
+                        defaultColor: "#2b6cb0"
+                        hoverColor: "#3182ce"
+                        radius: 12 * scaleFactor
+                        font.pixelSize: mediaItemFontSize * scaleFactor
+                        font.family: "Arial"
                         onClicked: {
                             currentPage++;
                             mediaFileView.model = getCurrentPageItems();
                             console.log("Next page, current:", currentPage + 1);
+                        }
+                        contentItem: Text {
+                            text: parent.text
+                            color: parent.enabled ? "#ffffff" : "#a0aec0"
+                            font: parent.font
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        background: Rectangle {
+                            radius: parent.radius
+                            gradient: Gradient {
+                                GradientStop {
+                                    position: 0.0
+                                    color: parent.enabled ? (parent.hovered ? "#3182ce" : "#2b6cb0") : "#e2e8f0"
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: parent.enabled ? (parent.hovered ? "#2c5282" : "#2a4365") : "#e2e8f0"
+                                }
+                            }
                         }
                     }
                 }
@@ -378,35 +411,25 @@ Item {
                 AppState.setState({
                     mediaFiles: songs
                 });
-                notificationPopup.text = message;
-                notificationPopup.color = "#4CAF50";
-                notificationPopup.open();
-                console.log("MediaFileView: Loaded songs for playlist ID:", playlistId, "Count:", songs.length);
+                console.log("MediaFileView: Loaded songs for playlist ID:", playlistId, "Count:", songs.length, "Message:", message);
             }
         }
 
         function onSongAddedToPlaylist(playlistId) {
             if (playlistId === AppState.currentPlaylistId) {
                 playlistViewModel.loadSongsInPlaylist(playlistId);
-                notificationPopup.text = "Song added to playlist";
-                notificationPopup.color = "#4CAF50";
-                notificationPopup.open();
+                console.log("MediaFileView: Song added to playlist ID:", playlistId);
             }
         }
 
         function onSongRemovedFromPlaylist(playlistId) {
             if (playlistId === AppState.currentPlaylistId) {
                 playlistViewModel.loadSongsInPlaylist(playlistId);
-                notificationPopup.text = "Song removed from playlist";
-                notificationPopup.color = "#4CAF50";
-                notificationPopup.open();
+                console.log("MediaFileView: Song removed from playlist ID:", playlistId);
             }
         }
 
         function onErrorOccurred(error) {
-            notificationPopup.text = error;
-            notificationPopup.color = "#F44336";
-            notificationPopup.open();
             console.log("MediaFileView: Error:", error);
         }
     }
@@ -414,9 +437,6 @@ Item {
     Connections {
         target: songViewModel
         function onErrorOccurred(error) {
-            notificationPopup.text = "Playback error: " + error;
-            notificationPopup.color = "#F44336";
-            notificationPopup.open();
             console.log("MediaFileView: Song playback error:", error);
         }
     }

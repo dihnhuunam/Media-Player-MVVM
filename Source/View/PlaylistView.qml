@@ -11,9 +11,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 30
+    property real topControlSearchRadius: 12 // Aligned with input field radius
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 24
+    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
     property real topControlSpacing: 30
     property real topControlMargin: 18
     property real topControlTopMargin: 20
@@ -25,7 +25,16 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#ffffff"
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: "#f5f7fa"
+            }
+            GradientStop {
+                position: 1.0
+                color: "#e8ecef"
+            }
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -56,11 +65,16 @@ Item {
                         NavigationManager.goBack();
                         console.log("Back clicked");
                     }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
+                    }
                     Image {
                         source: "qrc:/Assets/back.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
 
@@ -68,7 +82,9 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
                     radius: topControlSearchRadius * scaleFactor
-                    color: "#e0e0e0"
+                    color: "#f6f8fa"
+                    border.color: searchInput.activeFocus ? "#3182ce" : "#d0d7de"
+                    border.width: searchInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
 
                     MouseArea {
                         anchors.fill: parent
@@ -88,14 +104,16 @@ Item {
                             source: "qrc:/Assets/search.png"
                             Layout.preferredWidth: topControlSearchIconSize * scaleFactor
                             Layout.preferredHeight: topControlSearchIconSize * scaleFactor
+                            opacity: 0.8
                         }
 
                         TextInput {
                             id: searchInput
                             Layout.fillWidth: true
                             text: "Search Playlists"
-                            color: "#666666"
+                            color: "#2d3748"
                             font.pixelSize: topControlSearchFontSize * scaleFactor
+                            font.family: "Arial"
                             onActiveFocusChanged: {
                                 if (activeFocus && text === "Search Playlists") {
                                     text = "";
@@ -122,15 +140,20 @@ Item {
                             addPlaylistPopup.open();
                         } else {
                             notificationPopup.text = "Please login to create a playlist";
-                            notificationPopup.color = "#F44336";
+                            notificationPopup.color = "#e53e3e";
                             notificationPopup.open();
                         }
+                    }
+                    background: Rectangle {
+                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        radius: 10 * scaleFactor
                     }
                     Image {
                         source: "qrc:/Assets/add.png"
                         width: topControlIconSize * scaleFactor
                         height: topControlIconSize * scaleFactor
                         anchors.centerIn: parent
+                        opacity: parent.hovered ? 1.0 : 0.8
                     }
                 }
             }
@@ -155,28 +178,28 @@ Item {
                 delegate: Rectangle {
                     width: playlistView.width
                     height: playlistItemHeight * scaleFactor
-                    color: index % 2 === 0 ? "#f0f0f0" : "#ffffff"
+                    color: mouseArea.containsMouse ? "#f0f0f0" : "#ffffff"
+                    border.color: "#d0d7de"
+                    border.width: 1
 
                     RowLayout {
                         anchors.fill: parent
-                        spacing: playlistSpacing * scaleFactor
+                        anchors.leftMargin: 10 * scaleFactor // Khoảng cách nhỏ bên trái
+                        anchors.rightMargin: 10 * scaleFactor // Khoảng cách nhỏ bên phải
+                        spacing: 8 * scaleFactor // Khoảng cách giữa các thành phần giảm xuống
 
                         Text {
-                            text: (index + 1).toString()
+                            text: (index + 1) + ". " + model.name
                             font.pixelSize: playlistItemFontSize * scaleFactor
-                            color: "#666666"
-                            Layout.leftMargin: playlistItemMargin * scaleFactor
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-
-                        Text {
-                            text: model.name
-                            font.pixelSize: playlistItemFontSize * scaleFactor
-                            color: "#333333"
+                            font.family: "Arial"
+                            color: "#2d3748"
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
+                            elide: Text.ElideRight
                             MouseArea {
+                                id: mouseArea
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 onClicked: {
                                     console.log("PlaylistView: Clicking playlist, ID:", model.id, "Name:", model.name);
                                     playlistViewModel.loadSongsInPlaylist(model.id);
@@ -192,18 +215,22 @@ Item {
                         HoverButton {
                             Layout.preferredWidth: topControlIconSize * scaleFactor
                             Layout.preferredHeight: topControlIconSize * scaleFactor
-                            Layout.rightMargin: playlistItemMargin * scaleFactor
                             flat: true
                             onClicked: {
                                 popup.playlistId = model.id;
                                 popup.playlistName = model.name;
                                 popup.open();
                             }
+                            background: Rectangle {
+                                color: parent.hovered ? "#e6e9ec" : "transparent"
+                                radius: 10 * scaleFactor
+                            }
                             Image {
                                 source: "qrc:/Assets/more.png"
                                 width: topControlIconSize * scaleFactor * 0.6
                                 height: topControlIconSize * scaleFactor * 0.6
                                 anchors.centerIn: parent
+                                opacity: parent.hovered ? 1.0 : 0.8
                             }
                         }
                     }
@@ -213,7 +240,8 @@ Item {
                     anchors.centerIn: parent
                     text: "No playlists available"
                     font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#666666"
+                    font.family: "Arial"
+                    color: "#2d3748"
                     visible: playlistView.count === 0
                 }
             }
@@ -229,8 +257,8 @@ Item {
             focus: true
             background: Rectangle {
                 color: "#ffffff"
-                border.color: "#cccccc"
-                radius: 5
+                border.color: "#d0d7de"
+                radius: 8
             }
 
             ColumnLayout {
@@ -240,48 +268,66 @@ Item {
                 Text {
                     text: "Enter Playlist Name"
                     font.pixelSize: playlistItemFontSize * scaleFactor
-                    color: "#000000"
+                    font.family: "Arial"
+                    color: "#1a202c"
                     Layout.alignment: Qt.AlignHCenter
                 }
 
                 TextField {
                     id: newPlaylistNameField
                     placeholderText: "Playlist name"
-                    placeholderTextColor: "#666666"
-                    color: "#000000"
+                    placeholderTextColor: "#a0aec0"
+                    color: "#2d3748"
                     font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
                     Layout.fillWidth: true
                     Layout.leftMargin: playlistItemMargin * scaleFactor
                     Layout.rightMargin: playlistItemMargin * scaleFactor
                     background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
+                        color: "#f6f8fa"
+                        radius: 12
+                        border.color: parent.activeFocus ? "#3182ce" : "#d0d7de"
+                        border.width: parent.activeFocus ? 2 : 1
                     }
                 }
 
-                Button {
+                HoverButton {
                     id: addButton
                     text: "Add"
                     Layout.fillWidth: true
                     Layout.leftMargin: playlistItemMargin * scaleFactor
                     Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                    contentItem: Text {
-                        text: addButton.text
-                        font.pixelSize: playlistItemFontSize * scaleFactor
-                        color: "#000000"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         var name = newPlaylistNameField.text.trim();
                         if (name !== "") {
                             playlistViewModel.createNewPlaylist(name);
                             addPlaylistPopup.close();
                             newPlaylistNameField.text = "";
+                        }
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
                         }
                     }
                 }
@@ -297,18 +343,19 @@ Item {
             modal: true
             focus: true
             property string text: ""
-            property color color: "#4CAF50"
+            property color color: "#48bb78"
 
             background: Rectangle {
                 color: notificationPopup.color
-                radius: 5
+                radius: 8
             }
 
             Text {
                 anchors.centerIn: parent
                 text: notificationPopup.text
                 font.pixelSize: playlistItemFontSize * scaleFactor
-                color: "#FFFFFF"
+                font.family: "Arial"
+                color: "#ffffff"
             }
 
             Timer {
@@ -328,8 +375,8 @@ Item {
             focus: true
             background: Rectangle {
                 color: "#ffffff"
-                border.color: "#cccccc"
-                radius: 5
+                border.color: "#d0d7de"
+                radius: 8
             }
 
             property int playlistId: 0
@@ -339,30 +386,44 @@ Item {
                 anchors.fill: parent
                 spacing: playlistSpacing * scaleFactor
 
-                Button {
+                HoverButton {
                     text: "Delete"
                     Layout.fillWidth: true
                     Layout.leftMargin: playlistItemMargin * scaleFactor
                     Layout.rightMargin: playlistItemMargin * scaleFactor
-                    background: Rectangle {
-                        color: "#e0e0e0"
-                        radius: 5
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        font.pixelSize: playlistItemFontSize * scaleFactor
-                        color: "#000000"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
                     onClicked: {
                         if (AppState.isAuthenticated) {
                             playlistViewModel.deletePlaylist(popup.playlistId);
                             popup.close();
                         } else {
                             notificationPopup.text = "Please login to delete a playlist";
-                            notificationPopup.color = "#F44336";
+                            notificationPopup.color = "#e53e3e";
                             notificationPopup.open();
+                        }
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
                         }
                     }
                 }
@@ -373,25 +434,25 @@ Item {
             target: playlistViewModel
             function onErrorOccurred(error) {
                 notificationPopup.text = error;
-                notificationPopup.color = "#F44336";
+                notificationPopup.color = "#e53e3e";
                 notificationPopup.open();
             }
 
             function onPlaylistCreated(playlistId) {
                 notificationPopup.text = "Playlist created successfully (ID: " + playlistId + ")";
-                notificationPopup.color = "#4CAF50";
+                notificationPopup.color = "#48bb78";
                 notificationPopup.open();
             }
 
             function onPlaylistUpdated(playlistId) {
                 notificationPopup.text = "Playlist updated successfully (ID: " + playlistId + ")";
-                notificationPopup.color = "#4CAF50";
+                notificationPopup.color = "#48bb78";
                 notificationPopup.open();
             }
 
             function onPlaylistDeleted(playlistId) {
                 notificationPopup.text = "Playlist deleted successfully (ID: " + playlistId + ")";
-                notificationPopup.color = "#4CAF50";
+                notificationPopup.color = "#48bb78";
                 notificationPopup.open();
             }
 
@@ -410,7 +471,7 @@ Item {
             playlistViewModel.loadPlaylists();
         } else {
             notificationPopup.text = "Please login to load playlists";
-            notificationPopup.color = "#F44336";
+            notificationPopup.color = "#e53e3e";
             notificationPopup.open();
         }
         console.log("PlaylistView: Component completed at", new Date().toLocaleString(Qt.locale(), "hh:mm AP"));
