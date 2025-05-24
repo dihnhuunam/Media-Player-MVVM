@@ -9,9 +9,9 @@ AppState::AppState(QObject *parent) : QObject(parent)
     m_currentMediaArtist = "Unknown Artist";
     m_currentPlaylistId = -1;
     m_isAuthenticated = false;
+    m_userId = -1;
     m_settings = new QSettings("MediaPlayer", "Auth", this);
 
-    // Load thông tin người dùng khi khởi tạo
     loadUserInfo();
 }
 
@@ -34,6 +34,7 @@ QString AppState::email() const { return m_email; }
 QString AppState::name() const { return m_name; }
 QString AppState::dateOfBirth() const { return m_dateOfBirth; }
 QString AppState::role() const { return m_role; }
+int AppState::userId() const { return m_userId; }
 
 void AppState::setCurrentPlaylistName(const QString &name)
 {
@@ -116,6 +117,15 @@ void AppState::setRole(const QString &role)
     }
 }
 
+void AppState::setUserId(int id)
+{
+    if (m_userId != id)
+    {
+        m_userId = id;
+        emit userIdChanged();
+    }
+}
+
 void AppState::setState(const QVariantMap &state)
 {
     if (state.contains("playlistName"))
@@ -148,12 +158,14 @@ void AppState::loadUserInfo()
     m_name = m_settings->value("user/name", "").toString();
     m_dateOfBirth = m_settings->value("user/dateOfBirth", "").toString();
     m_role = m_settings->value("user/role", "").toString();
+    m_userId = m_settings->value("user/id", -1).toInt();
 
     emit authenticationChanged();
     emit emailChanged();
     emit nameChanged();
     emit dateOfBirthChanged();
     emit roleChanged();
+    emit userIdChanged();
 }
 
 void AppState::clearUserInfo()
@@ -163,16 +175,19 @@ void AppState::clearUserInfo()
     m_settings->remove("user/name");
     m_settings->remove("user/dateOfBirth");
     m_settings->remove("user/role");
+    m_settings->remove("user/id");
 
     m_isAuthenticated = false;
     m_email.clear();
     m_name.clear();
     m_dateOfBirth.clear();
     m_role.clear();
+    m_userId = -1;
 
     emit authenticationChanged();
     emit emailChanged();
     emit nameChanged();
     emit dateOfBirthChanged();
     emit roleChanged();
+    emit userIdChanged();
 }

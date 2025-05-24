@@ -16,7 +16,55 @@ Item {
     property real formSpacing: 18
     property real formMargin: 28
     property real formWidth: 385
-    property real formHeight: 586
+    property real formHeight: 550
+
+    function formatDOB(dateStr) {
+        if (!dateStr) {
+            return {
+                day: "01",
+                month: "01",
+                year: "2000"
+            };
+        }
+        let date = new Date(dateStr);
+        if (!isNaN(date)) {
+            let day = ("0" + date.getDate()).slice(-2);
+            let month = ("0" + (date.getMonth() + 1)).slice(-2);
+            let year = date.getFullYear();
+            return {
+                day: day,
+                month: month,
+                year: year.toString()
+            };
+        }
+        if (/\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+            let parts = dateStr.split("/");
+            return {
+                day: parts[0],
+                month: parts[1],
+                year: parts[2]
+            };
+        }
+        console.log("Invalid date format in formatDOB:", dateStr);
+        return {
+            day: "01",
+            month: "01",
+            year: "2000"
+        };
+    }
+
+    function parseDOBToSend(day, month, year) {
+        if (!day || !month || !year) {
+            console.log("Invalid DOB components for sending:", day, month, year);
+            return AppState.dateOfBirth; // Keep original value if invalid
+        }
+        let dobStr = `${day}/${month}/${year}`;
+        if (!/\d{2}\/\d{2}\/\d{4}/.test(dobStr)) {
+            console.log("Invalid DOB format for sending:", dobStr);
+            return AppState.dateOfBirth;
+        }
+        return `${year}-${month}-${day}`; // YYYY-MM-DD
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -78,7 +126,7 @@ Item {
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         color: "#333333"
-                        text: authViewModel.userEmail
+                        text: AppState.email
                         enabled: false
                         placeholderText: "Email"
                         placeholderTextColor: "#666666"
@@ -99,7 +147,7 @@ Item {
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         color: "#333333"
-                        text: authViewModel.userName
+                        text: AppState.name
                         placeholderText: "Full Name"
                         placeholderTextColor: "#666666"
                         verticalAlignment: Text.AlignVCenter
@@ -116,22 +164,81 @@ Item {
                     radius: 25 * scaleFactor
                     color: "#e0e0e0"
 
-                    TextField {
-                        id: dobField
+                    RowLayout {
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
-                        font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
-                        text: authViewModel.userDOB
-                        placeholderText: "Date of Birth (YYYY-MM-DD)"
-                        placeholderTextColor: "#666666"
-                        verticalAlignment: Text.AlignVCenter
-                        background: null
-                        validator: RegularExpressionValidator {
-                            regularExpression: /\d{4}-\d{2}-\d{2}/
+                        spacing: 5 * scaleFactor
+
+                        ComboBox {
+                            id: dayComboBox
+                            Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
+                            Layout.fillHeight: true
+                            font.pixelSize: formFieldFontSize * scaleFactor
+                            model: Array.from({
+                                length: 31
+                            }, (_, i) => ("0" + (i + 1)).slice(-2)) // 01 to 31
+                            currentIndex: parseInt(formatDOB(AppState.dateOfBirth).day) - 1
+                            background: Rectangle {
+                                color: "transparent"
+                            }
+                            contentItem: Text {
+                                text: dayComboBox.displayText
+                                font: dayComboBox.font
+                                color: "#333333"
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            onActivated: {
+                                console.log("Day selected:", displayText);
+                            }
                         }
-                        onFocusChanged: {
-                            console.log("Date of Birth field focus:", focus);
+
+                        ComboBox {
+                            id: monthComboBox
+                            Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
+                            Layout.fillHeight: true
+                            font.pixelSize: formFieldFontSize * scaleFactor
+                            model: Array.from({
+                                length: 12
+                            }, (_, i) => ("0" + (i + 1)).slice(-2)) // 01 to 12
+                            currentIndex: parseInt(formatDOB(AppState.dateOfBirth).month) - 1
+                            background: Rectangle {
+                                color: "transparent"
+                            }
+                            contentItem: Text {
+                                text: monthComboBox.displayText
+                                font: monthComboBox.font
+                                color: "#333333"
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            onActivated: {
+                                console.log("Month selected:", displayText);
+                            }
+                        }
+
+                        ComboBox {
+                            id: yearComboBox
+                            Layout.preferredWidth: (parent.width - 10 * scaleFactor) / 3
+                            Layout.fillHeight: true
+                            font.pixelSize: formFieldFontSize * scaleFactor
+                            model: Array.from({
+                                length: 100
+                            }, (_, i) => (2025 - i).toString()) // From 2025 to 1926
+                            currentIndex: 2025 - parseInt(formatDOB(AppState.dateOfBirth).year)
+                            background: Rectangle {
+                                color: "transparent"
+                            }
+                            contentItem: Text {
+                                text: yearComboBox.displayText
+                                font: yearComboBox.font
+                                color: "#333333"
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                            }
+                            onActivated: {
+                                console.log("Year selected:", displayText);
+                            }
                         }
                     }
                 }
@@ -143,65 +250,39 @@ Item {
                     color: "#e0e0e0"
 
                     TextField {
-                        id: currentPasswordField
+                        id: passwordField
                         anchors.fill: parent
                         anchors.margins: 8 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         color: "#333333"
-                        placeholderText: "Current Password"
+                        text: "••••••••"
+                        enabled: false
+                        placeholderText: "Password"
                         placeholderTextColor: "#666666"
                         verticalAlignment: Text.AlignVCenter
-                        echoMode: TextInput.Password
                         background: null
-                        onFocusChanged: {
-                            console.log("Current Password field focus:", focus);
-                        }
                     }
                 }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
-
-                    TextField {
-                        id: newPasswordField
+                Text {
+                    text: "Change Password"
+                    font.pixelSize: 15 * scaleFactor
+                    color: "#212121"
+                    Layout.alignment: Qt.AlignHCenter
+                    MouseArea {
                         anchors.fill: parent
-                        anchors.margins: 8 * scaleFactor
-                        font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
-                        placeholderText: "New Password (optional)"
-                        placeholderTextColor: "#666666"
-                        verticalAlignment: Text.AlignVCenter
-                        echoMode: TextInput.Password
-                        background: null
-                        onFocusChanged: {
-                            console.log("New Password field focus:", focus);
+                        hoverEnabled: true
+                        onEntered: {
+                            parent.color = "#757575";
+                            parent.font.underline = true;
                         }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 25 * scaleFactor
-                    color: "#e0e0e0"
-
-                    TextField {
-                        id: confirmPasswordField
-                        anchors.fill: parent
-                        anchors.margins: 8 * scaleFactor
-                        font.pixelSize: formFieldFontSize * scaleFactor
-                        color: "#333333"
-                        placeholderText: "Confirm New Password"
-                        placeholderTextColor: "#666666"
-                        verticalAlignment: Text.AlignVCenter
-                        echoMode: TextInput.Password
-                        background: null
-                        enabled: newPasswordField.text !== ""
-                        onFocusChanged: {
-                            console.log("Confirm Password field focus:", focus);
+                        onExited: {
+                            parent.color = "#212121";
+                            parent.font.underline = false;
+                        }
+                        onClicked: {
+                            changePasswordPopup.open();
+                            console.log("Change Password clicked, opening popup");
                         }
                     }
                 }
@@ -215,13 +296,169 @@ Item {
                     radius: 30 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     onClicked: {
+                        let dobToSend = parseDOBToSend(dayComboBox.currentText, monthComboBox.currentText, yearComboBox.currentText);
+                        console.log("Sending DOB to updateProfile:", dobToSend);
+                        authViewModel.updateProfile(AppState.userId, nameField.text, dobToSend, "", "");
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#FFFFFF"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+        }
+    }
+
+    Popup {
+        id: changePasswordPopup
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 350 * scaleFactor
+        height: 450 * scaleFactor
+        modal: true
+        focus: true
+
+        background: Rectangle {
+            color: "#ffffff"
+            radius: 15 * scaleFactor
+            border.color: "#e0e0e0"
+            border.width: 2 * scaleFactor
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 20 * scaleFactor
+            spacing: formSpacing * scaleFactor
+
+            Text {
+                text: "Change Password"
+                font.pixelSize: 24 * scaleFactor
+                font.bold: true
+                color: "#000000"
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: formFieldHeight * scaleFactor
+                radius: 25 * scaleFactor
+                color: "#e0e0e0"
+
+                TextField {
+                    id: currentPasswordField
+                    anchors.fill: parent
+                    anchors.margins: 8 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    color: "#333333"
+                    placeholderText: "Current Password"
+                    placeholderTextColor: "#666666"
+                    verticalAlignment: Text.AlignVCenter
+                    echoMode: TextInput.Password
+                    background: null
+                    onFocusChanged: {
+                        console.log("Current Password field focus:", focus);
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: formFieldHeight * scaleFactor
+                radius: 25 * scaleFactor
+                color: "#e0e0e0"
+
+                TextField {
+                    id: newPasswordField
+                    anchors.fill: parent
+                    anchors.margins: 8 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    color: "#333333"
+                    placeholderText: "New Password"
+                    placeholderTextColor: "#666666"
+                    verticalAlignment: Text.AlignVCenter
+                    echoMode: TextInput.Password
+                    background: null
+                    onFocusChanged: {
+                        console.log("New Password field focus:", focus);
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: formFieldHeight * scaleFactor
+                radius: 25 * scaleFactor
+                color: "#e0e0e0"
+
+                TextField {
+                    id: confirmPasswordField
+                    anchors.fill: parent
+                    anchors.margins: 8 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    color: "#333333"
+                    placeholderText: "Confirm New Password"
+                    placeholderTextColor: "#666666"
+                    verticalAlignment: Text.AlignVCenter
+                    echoMode: TextInput.Password
+                    background: null
+                    enabled: newPasswordField.text !== ""
+                    onFocusChanged: {
+                        console.log("Confirm Password field focus:", focus);
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 10 * scaleFactor
+
+                HoverButton {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    text: "Cancel"
+                    defaultColor: "#e0e0e0"
+                    hoverColor: "#cccccc"
+                    radius: 15 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    onClicked: {
+                        currentPasswordField.text = "";
+                        newPasswordField.text = "";
+                        confirmPasswordField.text = "";
+                        changePasswordPopup.close();
+                        console.log("Cancel change password clicked");
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#333333"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                HoverButton {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    text: "Confirm"
+                    defaultColor: "#212121"
+                    hoverColor: "#424242"
+                    radius: 15 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    onClicked: {
                         if (newPasswordField.text !== "" && newPasswordField.text !== confirmPasswordField.text) {
                             notificationPopup.message = "Passwords do not match";
                             notificationPopup.color = "#F44336";
                             notificationPopup.open();
+                        } else if (currentPasswordField.text === "") {
+                            notificationPopup.message = "Current Password is required";
+                            notificationPopup.color = "#F44336";
+                            notificationPopup.open();
                         } else {
-                            authViewModel.updateProfile(nameField.text, dobField.text, currentPasswordField.text, newPasswordField.text);
-                            console.log("Update profile clicked");
+                            // Only send password fields for password change
+                            authViewModel.updateProfile(AppState.userId, "", "", currentPasswordField.text, newPasswordField.text);
                         }
                     }
                     contentItem: Text {
@@ -276,11 +513,16 @@ Item {
                 currentPasswordField.text = "";
                 newPasswordField.text = "";
                 confirmPasswordField.text = "";
+                changePasswordPopup.close();
+                AppState.setName(nameField.text);
+                let dobToSave = parseDOBToSend(dayComboBox.currentText, monthComboBox.currentText, yearComboBox.currentText);
+                console.log("Saving DOB to AppState:", dobToSave);
+                AppState.setDateOfBirth(dobToSave);
             }
         }
     }
 
     Component.onCompleted: {
-        console.log("ProfileView: Component completed");
+        console.log("ProfileView: Component completed, AppState.dateOfBirth:", AppState.dateOfBirth);
     }
 }

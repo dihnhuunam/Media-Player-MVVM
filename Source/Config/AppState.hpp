@@ -13,11 +13,12 @@ class AppState : public QObject
     Q_PROPERTY(QString currentMediaTitle READ currentMediaTitle WRITE setCurrentMediaTitle NOTIFY currentMediaTitleChanged)
     Q_PROPERTY(QString currentMediaArtist READ currentMediaArtist WRITE setCurrentMediaArtist NOTIFY currentMediaArtistChanged)
     Q_PROPERTY(int currentPlaylistId READ currentPlaylistId WRITE setCurrentPlaylistId NOTIFY currentPlaylistIdChanged)
-    Q_PROPERTY(bool isAuthenticated READ isAuthenticated NOTIFY authenticationChanged)              // Thêm thuộc tính xác thực
-    Q_PROPERTY(QString email READ email WRITE setEmail NOTIFY emailChanged)                         // Thêm thuộc tính email
-    Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)                             // Thêm thuộc tính name
-    Q_PROPERTY(QString dateOfBirth READ dateOfBirth WRITE setDateOfBirth NOTIFY dateOfBirthChanged) // Thêm thuộc tính dob
-    Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged)                             // Thêm thuộc tính role
+    Q_PROPERTY(bool isAuthenticated READ isAuthenticated NOTIFY authenticationChanged)
+    Q_PROPERTY(QString email READ email WRITE setEmail NOTIFY emailChanged)
+    Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
+    Q_PROPERTY(QString dateOfBirth READ dateOfBirth WRITE setDateOfBirth NOTIFY dateOfBirthChanged)
+    Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged)
+    Q_PROPERTY(int userId READ userId WRITE setUserId NOTIFY userIdChanged) // Thêm thuộc tính userId
 
 public:
     static AppState *instance();
@@ -26,11 +27,12 @@ public:
     QString currentMediaTitle() const;
     QString currentMediaArtist() const;
     int currentPlaylistId() const;
-    bool isAuthenticated() const; // Chuyển phương thức isAuthenticated
+    bool isAuthenticated() const;
     QString email() const;
     QString name() const;
     QString dateOfBirth() const;
     QString role() const;
+    int userId() const; // Thêm getter cho userId
 
 public slots:
     void setCurrentPlaylistName(const QString &name);
@@ -43,8 +45,9 @@ public slots:
     void setName(const QString &name);
     void setDateOfBirth(const QString &dob);
     void setRole(const QString &role);
-    void loadUserInfo();  // Phương thức mới để load thông tin từ QSettings
-    void clearUserInfo(); // Phương thức để xóa thông tin người dùng (khi đăng xuất)
+    void setUserId(int id); 
+    void loadUserInfo();
+    void clearUserInfo();
 
 signals:
     void currentPlaylistNameChanged();
@@ -52,11 +55,12 @@ signals:
     void currentMediaTitleChanged();
     void currentMediaArtistChanged();
     void currentPlaylistIdChanged();
-    void authenticationChanged(); // Signal cho trạng thái xác thực
+    void authenticationChanged();
     void emailChanged();
     void nameChanged();
     void dateOfBirthChanged();
     void roleChanged();
+    void userIdChanged(); 
 
 private:
     AppState(QObject *parent = nullptr);
@@ -66,12 +70,13 @@ private:
     QString m_currentMediaTitle;
     QString m_currentMediaArtist;
     int m_currentPlaylistId;
-    QString m_email;        // Thêm biến lưu email
-    QString m_name;         // Thêm biến lưu name
-    QString m_dateOfBirth;  // Thêm biến lưu dateOfBirth
-    QString m_role;         // Thêm biến lưu role
-    bool m_isAuthenticated; // Thêm biến lưu trạng thái xác thực
-    QSettings *m_settings;  // Thêm QSettings để truy cập thông tin
+    QString m_email;
+    QString m_name;
+    QString m_dateOfBirth;
+    QString m_role;
+    bool m_isAuthenticated;
+    int m_userId; 
+    QSettings *m_settings;
 };
 
 #endif // APPSTATE_HPP

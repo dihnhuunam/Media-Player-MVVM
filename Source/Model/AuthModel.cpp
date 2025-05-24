@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QDebug>
+#include <QDateTime>
 
 AuthModel::AuthModel(QObject *parent)
     : QObject(parent),
@@ -43,7 +44,25 @@ void AuthModel::registerUser(const QString &email, const QString &password, cons
     json["email"] = email;
     json["password"] = password;
     json["name"] = name;
-    json["dateOfBirth"] = dob;
+    QString formattedDob = dob;
+    if (!dob.isEmpty())
+    {
+        QDateTime date = QDateTime::fromString(dob, "yyyy-MM-dd");
+        if (!date.isValid())
+        {
+            date = QDateTime::fromString(dob, Qt::ISODate);
+        }
+        if (date.isValid())
+        {
+            formattedDob = date.toUTC().toString(Qt::ISODate);
+        }
+        else
+        {
+            qDebug() << "Invalid date format for dob in register:" << dob;
+            formattedDob = "";
+        }
+    }
+    json["dateOfBirth"] = formattedDob;
     QJsonDocument doc(json);
     QByteArray data = doc.toJson();
 
@@ -54,7 +73,75 @@ void AuthModel::registerUser(const QString &email, const QString &password, cons
         reply->deleteLater(); });
 }
 
-void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
+void AuthModel::updateProfile(int userId, const QString &name, const QString &dob, const QString &currentPassword, const QString &newPassword)
+{
+    QUrl url(AppConfig::instance().getAuthUpdateEndpoint(userId));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader("Authorization", "Bearer " + getToken().toUtf8());
+
+    QJsonObject json;
+    bool hasData = false;
+
+    // Add name if it has changed or is non-empty
+    if (!name.isEmpty() && name != AppState::instance()->name())
+    {
+        json["name"] = name;
+        hasData = true;
+    }
+
+    // Add dateOfBirth if it has changed or is non-empty
+    QString formattedDob = dob;
+    if (!dob.isEmpty() && dob != AppState::instance()->dateOfBirth())
+    {
+        QDateTime date = QDateTime::fromString(dob, "yyyy-MM-dd");
+        if (!date.isValid())
+        {
+            date = QDateTime::fromString(dob, Qt::ISODate);
+        }
+        if (date.isValid())
+        {
+            formattedDob = date.toUTC().toString(Qt::ISODate);
+            json["dateOfBirth"] = formattedDob;
+            hasData = true;
+        }
+        else
+        {
+            qDebug() << "Invalid date format for dob in updateProfile:" << dob;
+        }
+    }
+
+    // Add password fields if both are provided
+    if (!currentPassword.isEmpty() && !newPassword.isEmpty())
+    {
+        json["currentPassword"] = currentPassword;
+        json["password"] = newPassword; // API expects "password" for new password
+        hasData = true;
+    }
+    else if (currentPassword.isEmpty() != newPassword.isEmpty())
+    {
+        // One password field is provided but not the other
+        emit profileUpdateResult(false, "Both current and new passwords are required for password change");
+        return;
+    }
+
+    if (!hasData)
+    {
+        emit profileUpdateResult(false, "No valid data provided for update");
+        return;
+    }
+
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
+
+    QNetworkReply *reply = m_networkManager->put(request, data);
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        handleNetworkReply(reply, false, true);
+        reply->deleteLater(); });
+}
+
+void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin, bool isUpdate)
 {
     bool success = false;
     QString message;
@@ -82,6 +169,15 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
                     success = false;
                 }
             }
+            else if (isUpdate)
+            {
+                success = !message.contains("error", Qt::CaseInsensitive);
+                if (success && obj.contains("user"))
+                {
+                    QJsonObject user = obj["user"].toObject();
+                    saveUserInfo(user);
+                }
+            }
             else
             {
                 success = !message.contains("error", Qt::CaseInsensitive);
@@ -89,7 +185,7 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
         }
         else
         {
-            message = "Phản hồi không hợp lệ từ server";
+            message = "Invalid response from server";
         }
     }
     else
@@ -101,6 +197,10 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
     {
         emit loginResult(success, message);
     }
+    else if (isUpdate)
+    {
+        emit profileUpdateResult(success, message);
+    }
     else
     {
         emit registerResult(success, message);
@@ -110,16 +210,60 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin)
 void AuthModel::saveToken(const QString &token)
 {
     m_settings->setValue("jwt_token", token);
-    AppState::instance()->loadUserInfo(); // Cập nhật trạng thái trong AppState
+    AppState::instance()->loadUserInfo();
 }
 
 void AuthModel::saveUserInfo(const QJsonObject &user)
 {
-    m_settings->setValue("user/email", user["email"].toString());
-    m_settings->setValue("user/name", user["name"].toString());
-    m_settings->setValue("user/dateOfBirth", user["dateOfBirth"].toString());
-    m_settings->setValue("user/role", user["role"].toString());
-    AppState::instance()->loadUserInfo(); // Cập nhật trạng thái trong AppState
+    AppState *appState = AppState::instance();
+    QString currentEmail = appState->email();
+    QString currentName = appState->name();
+    QString currentDateOfBirth = appState->dateOfBirth();
+    QString currentRole = appState->role();
+    int currentUserId = appState->userId();
+
+    QString email = user.contains("email") ? user["email"].toString() : currentEmail;
+    QString name = user.contains("name") ? user["name"].toString() : currentName;
+    QString dateOfBirth = user.contains("dateOfBirth") ? user["dateOfBirth"].toString() : currentDateOfBirth;
+    QString role = user.contains("role") ? user["role"].toString() : currentRole;
+    int userId = user.contains("id") ? user["id"].toInt() : currentUserId;
+
+    if (!dateOfBirth.isEmpty())
+    {
+        QDateTime date = QDateTime::fromString(dateOfBirth, Qt::ISODate);
+        if (!date.isValid())
+        {
+            qDebug() << "Invalid ISO 8601 date format for dob in saveUserInfo:" << dateOfBirth;
+            dateOfBirth = currentDateOfBirth;
+        }
+    }
+
+    if (currentEmail != email)
+    {
+        m_settings->setValue("user/email", email);
+        appState->setEmail(email);
+    }
+    if (currentName != name)
+    {
+        m_settings->setValue("user/name", name);
+        appState->setName(name);
+    }
+    if (currentDateOfBirth != dateOfBirth)
+    {
+        m_settings->setValue("user/dateOfBirth", dateOfBirth);
+        appState->setDateOfBirth(dateOfBirth);
+    }
+
+    if (currentUserId != userId && userId != 0)
+    {
+        m_settings->setValue("user/id", userId);
+        appState->setUserId(userId);
+    }
+    if (currentRole != role && !role.isEmpty())
+    {
+        m_settings->setValue("user/role", role);
+        appState->setRole(role);
+    }
 }
 
 QString AuthModel::getToken() const
@@ -127,7 +271,12 @@ QString AuthModel::getToken() const
     return m_settings->value("jwt_token", "").toString();
 }
 
+int AuthModel::getUserId() const
+{
+    return m_settings->value("user/id", -1).toInt();
+}
+
 void AuthModel::clearToken()
 {
-    AppState::instance()->clearUserInfo(); // Gọi phương thức clearUserInfo của AppState
+    AppState::instance()->clearUserInfo();
 }

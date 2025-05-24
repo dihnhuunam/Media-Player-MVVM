@@ -58,6 +58,12 @@ QString AppConfig::getAuthRegisterEndpoint() const
     return envVariables.value("AUTH_REGISTER_ENDPOINT", getBaseUrl() + "/api/auth/register");
 }
 
+QString AppConfig::getAuthUpdateEndpoint(int userId) const
+{
+    QString endpoint = envVariables.value("AUTH_UPDATE_ENDPOINT", getBaseUrl() + "/api/auth/users");
+    return endpoint + "/" + QString::number(userId);
+}
+
 QString AppConfig::getSongsEndpoint() const
 {
     return envVariables.value("SONGS_ENDPOINT", getBaseUrl() + "/api/songs");
