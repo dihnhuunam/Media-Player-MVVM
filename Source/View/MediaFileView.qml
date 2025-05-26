@@ -11,9 +11,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 12 // Aligned with input field radius
+    property real topControlSearchRadius: 12
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
+    property real topControlSearchFontSize: 22
     property real topControlSpacing: 30
     property real topControlMargin: 18
     property real topControlTopMargin: 20
@@ -66,9 +66,15 @@ Item {
         interval: 200
         repeat: false
         onTriggered: {
-            console.log("Search query:", searchInput.text);
-            if (songViewModel && searchInput.text !== "Search Songs") {
-                songViewModel.search(searchInput.text);
+            console.log("Search query:", searchInput.text, "Playlist ID:", AppState.currentPlaylistId);
+            if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
+                if (AppState.currentPlaylistId !== -1) {
+                    playlistViewModel.searchSongsInPlaylist(AppState.currentPlaylistId, searchInput.text);
+                } else {
+                    console.log("Error: Invalid playlist ID");
+                }
+            } else {
+                songSearchResultsModel.clear();
             }
         }
     }
@@ -105,6 +111,8 @@ Item {
                     flat: true
                     onClicked: {
                         console.log("Back button clicked, navigating back");
+                        songSearchResultsModel.clear();
+                        searchInput.text = "Search Songs";
                         NavigationManager.goBack();
                     }
                     background: Rectangle {
@@ -216,6 +224,10 @@ Item {
                     Layout.rightMargin: mediaItemMargin * scaleFactor
                 }
 
+                ListModel {
+                    id: songSearchResultsModel
+                }
+
                 ListView {
                     id: mediaFileView
                     Layout.fillWidth: true
@@ -227,8 +239,7 @@ Item {
                     cacheBuffer: 2000
                     maximumFlickVelocity: 4000
                     flickDeceleration: 1500
-
-                    model: getCurrentPageItems()
+                    model: searchInput.text !== "Search Songs" && searchInput.text !== "" ? songSearchResultsModel : getCurrentPageItems()
 
                     delegate: Rectangle {
                         width: mediaFileView.width
@@ -244,7 +255,7 @@ Item {
                             spacing: 8 * scaleFactor
 
                             Text {
-                                text: (currentPage * itemsPerPage + index + 1) + ". " + modelData.title + " - " + (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist")
+                                text: (searchInput.text !== "Search Songs" && searchInput.text !== "" ? index + 1 : (currentPage * itemsPerPage + index + 1)) + ". " + (searchInput.text !== "Search Songs" && searchInput.text !== "" ? model.title : modelData.title) + " - " + (searchInput.text !== "Search Songs" && searchInput.text !== "" ? (model.artists ? model.artists.join(", ") : "Unknown Artist") : (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist"))
                                 font.pixelSize: mediaItemFontSize * scaleFactor
                                 font.family: "Arial"
                                 color: "#2d3748"
@@ -256,15 +267,16 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onClicked: {
+                                        let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
                                         AppState.setState({
-                                            title: modelData.title,
-                                            artist: modelData.artists ? modelData.artists.join(", ") : "Unknown Artist",
-                                            filePath: modelData.file_path,
+                                            title: songData.title,
+                                            artist: songData.artists ? songData.artists.join(", ") : "Unknown Artist",
+                                            filePath: songData.file_path,
                                             playlistId: AppState.currentPlaylistId
                                         });
-                                        songViewModel.playSong(modelData.id, modelData.title, modelData.artists);
+                                        songViewModel.playSong(songData.id, songData.title, songData.artists);
                                         NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
-                                        console.log("Selected song:", modelData.title, "Artists:", modelData.artists.join(", "), "Playing and navigated to MediaPlayerView");
+                                        console.log("Selected song:", songData.title, "Artists:", songData.artists.join(", "), "Playing and navigated to MediaPlayerView");
                                     }
                                 }
                             }
@@ -274,8 +286,13 @@ Item {
                                 Layout.preferredHeight: mediaItemHeight * scaleFactor
                                 flat: true
                                 onClicked: {
-                                    playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, modelData.id);
-                                    console.log("Removed song:", modelData.title, "from playlist ID:", AppState.currentPlaylistId);
+                                    let songId = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model.id : modelData.id;
+                                    let songTitle = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model.title : modelData.title;
+                                    playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, songId);
+                                    console.log("Removed song:", songTitle, "from playlist ID:", AppState.currentPlaylistId);
+                                    if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
+                                        songSearchResultsModel.remove(index);
+                                    }
                                 }
                                 background: Rectangle {
                                     color: parent.hovered ? "#e6e9ec" : "transparent"
@@ -294,11 +311,11 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "No songs in this playlist"
+                        text: searchInput.text !== "Search Songs" && searchInput.text !== "" ? "No search results" : "No songs in this playlist"
                         font.pixelSize: mediaItemFontSize * scaleFactor
                         font.family: "Arial"
                         color: "#2d3748"
-                        visible: AppState.currentMediaFiles.length === 0
+                        visible: mediaFileView.count === 0
                     }
 
                     Behavior on opacity {
@@ -317,7 +334,7 @@ Item {
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 20 * scaleFactor
-                    visible: AppState.currentMediaFiles.length > 0
+                    visible: AppState.currentMediaFiles.length > 0 && (searchInput.text === "Search Songs" || searchInput.text === "")
 
                     HoverButton {
                         text: "Previous"
@@ -411,6 +428,9 @@ Item {
                 AppState.setState({
                     mediaFiles: songs
                 });
+                totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
+                currentPage = 0;
+                mediaFileView.model = getCurrentPageItems();
                 console.log("MediaFileView: Loaded songs for playlist ID:", playlistId, "Count:", songs.length, "Message:", message);
             }
         }
@@ -429,6 +449,21 @@ Item {
             }
         }
 
+        function onSongSearchResultsLoaded(playlistId, songs, message) {
+            if (playlistId === AppState.currentPlaylistId) {
+                console.log("MediaFileView: Song search results loaded for playlist ID:", playlistId, "Count:", songs.length, "Message:", message);
+                songSearchResultsModel.clear();
+                for (var i = 0; i < songs.length; i++) {
+                    songSearchResultsModel.append({
+                        id: songs[i].id,
+                        title: songs[i].title,
+                        artists: songs[i].artists,
+                        file_path: songs[i].file_path
+                    });
+                }
+            }
+        }
+
         function onErrorOccurred(error) {
             console.log("MediaFileView: Error:", error);
         }
@@ -442,7 +477,7 @@ Item {
     }
 
     Component.onCompleted: {
-        console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles.length);
+        console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles.length, "Playlist ID:", AppState.currentPlaylistId);
         if (AppState.currentPlaylistId !== -1) {
             playlistViewModel.loadSongsInPlaylist(AppState.currentPlaylistId);
         }

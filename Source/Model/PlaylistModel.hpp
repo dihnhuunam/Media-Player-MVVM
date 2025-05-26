@@ -51,10 +51,14 @@ public:
     Q_INVOKABLE void removeSongFromPlaylist(int playlistId, int songId);
     Q_INVOKABLE void deletePlaylist(int playlistId);
     Q_INVOKABLE void loadSongsInPlaylist(int playlistId);
+    Q_INVOKABLE void search(const QString &query);
+    Q_INVOKABLE void searchSongsInPlaylist(int playlistId, const QString &query);
 
 signals:
     void playlistsChanged();
     void songsLoaded(int playlistId, const QList<SongData> &songs, const QString &message);
+    void searchResultsLoaded(const QList<PlaylistData> &playlists, const QString &message);
+    void songSearchResultsLoaded(int playlistId, const QList<SongData> &songs, const QString &message);
     void errorOccurred(const QString &error);
     void isLoadingChanged();
     void playlistCreated(int playlistId);
@@ -72,5 +76,4 @@ private:
     QSettings *m_settings;
     bool m_isLoading = false;
 };
-
 #endif // PLAYLISTMODEL_H

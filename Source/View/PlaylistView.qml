@@ -11,9 +11,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 12 // Aligned with input field radius
+    property real topControlSearchRadius: 12
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
+    property real topControlSearchFontSize: 22
     property real topControlSpacing: 30
     property real topControlMargin: 18
     property real topControlTopMargin: 20
@@ -125,7 +125,12 @@ Item {
                                 }
                             }
                             onTextChanged: {
-                                console.log("Search query:", text);
+                                if (text !== "Search Playlists" && text !== "") {
+                                    console.log("Search query:", text);
+                                    playlistViewModel.search(text);
+                                } else {
+                                    searchResultsModel.clear();
+                                }
                             }
                         }
                     }
@@ -158,6 +163,10 @@ Item {
                 }
             }
 
+            ListModel {
+                id: searchResultsModel
+            }
+
             ListView {
                 id: playlistView
                 Layout.fillWidth: true
@@ -170,7 +179,7 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 clip: true
                 interactive: true
-                model: playlistViewModel.playlistModel
+                model: searchInput.text !== "" && searchInput.text !== "Search Playlists" ? searchResultsModel : playlistViewModel.playlistModel
                 cacheBuffer: 2000
                 maximumFlickVelocity: 4000
                 flickDeceleration: 1500
@@ -184,9 +193,9 @@ Item {
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10 * scaleFactor // Khoảng cách nhỏ bên trái
-                        anchors.rightMargin: 10 * scaleFactor // Khoảng cách nhỏ bên phải
-                        spacing: 8 * scaleFactor // Khoảng cách giữa các thành phần giảm xuống
+                        anchors.leftMargin: 10 * scaleFactor
+                        anchors.rightMargin: 10 * scaleFactor
+                        spacing: 8 * scaleFactor
 
                         Text {
                             text: (index + 1) + ". " + model.name
@@ -202,12 +211,12 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     console.log("PlaylistView: Clicking playlist, ID:", model.id, "Name:", model.name);
-                                    playlistViewModel.loadSongsInPlaylist(model.id);
                                     AppState.setState({
                                         playlistId: model.id,
                                         playlistName: model.name
                                     });
-                                    console.log("Clicked playlist:", model.name, "ID:", model.id);
+                                    playlistViewModel.loadSongsInPlaylist(model.id);
+                                    console.log("PlaylistView: Set AppState.currentPlaylistId to", model.id, "Navigating to MediaFileView");
                                 }
                             }
                         }
@@ -238,7 +247,7 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "No playlists available"
+                    text: searchInput.text !== "" && searchInput.text !== "Search Playlists" ? "No search results" : "No playlists available"
                     font.pixelSize: playlistItemFontSize * scaleFactor
                     font.family: "Arial"
                     color: "#2d3748"
@@ -462,6 +471,20 @@ Item {
                     mediaFiles: songs
                 });
                 NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml");
+                console.log("PlaylistView: Navigated to MediaFileView for playlist ID:", playlistId);
+            }
+
+            function onSearchResultsLoaded(playlists, message) {
+                console.log("PlaylistView: Search results loaded, count:", playlists.length, "Message:", message);
+                searchResultsModel.clear();
+                for (var i = 0; i < playlists.length; i++) {
+                    searchResultsModel.append({
+                        id: playlists[i].id,
+                        name: playlists[i].name,
+                        imageUrl: playlists[i].imageUrl || "",
+                        userId: playlists[i].userId
+                    });
+                }
             }
         }
     }
@@ -474,6 +497,6 @@ Item {
             notificationPopup.color = "#e53e3e";
             notificationPopup.open();
         }
-        console.log("PlaylistView: Component completed at", new Date().toLocaleString(Qt.locale(), "hh:mm AP"));
+        console.log("PlaylistView: Component completed at", new Date().toLocaleString(Qt.locale(), "hh:mm AP"), "Current Playlist ID:", AppState.currentPlaylistId);
     }
 }

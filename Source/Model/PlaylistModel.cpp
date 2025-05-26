@@ -195,6 +195,50 @@ void PlaylistModel::loadSongsInPlaylist(int playlistId)
             { handleNetworkReply(reply); });
 }
 
+void PlaylistModel::search(const QString &query)
+{
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistsSearchEndpoint());
+    QUrlQuery queryParams;
+    queryParams.addQueryItem("q", query);
+    url.setQuery(queryParams);
+
+    QNetworkRequest request(url);
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
+    {
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    }
+
+    QNetworkReply *reply = m_networkManager.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
+}
+
+void PlaylistModel::searchSongsInPlaylist(int playlistId, const QString &query)
+{
+    m_isLoading = true;
+    emit isLoadingChanged();
+
+    QUrl url(AppConfig::instance().getPlaylistSongsSearchEndpoint(playlistId));
+    QUrlQuery queryParams;
+    queryParams.addQueryItem("q", query);
+    url.setQuery(queryParams);
+
+    QNetworkRequest request(url);
+    QString token = m_settings->value("jwt_token").toString();
+    if (!token.isEmpty())
+    {
+        request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
+    }
+
+    QNetworkReply *reply = m_networkManager.get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]()
+            { handleNetworkReply(reply); });
+}
+
 void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
 {
     if (!reply)
@@ -210,10 +254,9 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
         {
             if (endpoint.contains("/playlists") && !endpoint.contains("/songs"))
             {
-                // Xử lý danh sách playlists
+                // Xử lý danh sách playlists (bao gồm cả tìm kiếm)
                 QJsonArray jsonArray = doc.array();
-                beginResetModel();
-                m_playlists.clear();
+                QList<PlaylistData> playlists;
                 for (const QJsonValue &value : jsonArray)
                 {
                     QJsonObject obj = value.toObject();
@@ -223,14 +266,25 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                     playlist.songs.clear();
                     playlist.imageUrl = obj["imageUrl"].toString("");
                     playlist.userId = obj["userId"].toInt();
-                    m_playlists.append(playlist);
+                    playlists.append(playlist);
                 }
-                endResetModel();
-                emit playlistsChanged();
+                if (endpoint.contains("/search"))
+                {
+                    // Kết quả tìm kiếm playlist
+                    emit searchResultsLoaded(playlists, "Playlists loaded successfully");
+                }
+                else
+                {
+                    // Danh sách playlist thông thường
+                    beginResetModel();
+                    m_playlists = playlists;
+                    endResetModel();
+                    emit playlistsChanged();
+                }
             }
             else if (endpoint.contains("/songs"))
             {
-                // Xử lý danh sách bài hát trong playlist
+                // Xử lý danh sách bài hát trong playlist hoặc kết quả tìm kiếm bài hát
                 QJsonArray jsonArray = doc.array();
                 QList<SongData> songs;
                 for (const QJsonValue &value : jsonArray)
@@ -252,7 +306,16 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                 // Trích xuất playlistId từ URL
                 QStringList pathParts = endpoint.split('/');
                 int playlistId = pathParts[pathParts.size() - 2].toInt();
-                emit songsLoaded(playlistId, songs, "Songs loaded successfully");
+                if (endpoint.contains("/search"))
+                {
+                    // Kết quả tìm kiếm bài hát trong playlist
+                    emit songSearchResultsLoaded(playlistId, songs, "Song search results loaded successfully");
+                }
+                else
+                {
+                    // Danh sách bài hát thông thường trong playlist
+                    emit songsLoaded(playlistId, songs, "Songs loaded successfully");
+                }
             }
         }
         else if (doc.isObject())
