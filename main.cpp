@@ -5,6 +5,7 @@
 #include "SongViewModel.hpp"
 #include "PlaylistViewModel.hpp"
 #include "AppState.hpp"
+#include "AdminViewModel.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -16,19 +17,23 @@ int main(int argc, char *argv[])
     qmlRegisterSingletonType(QUrl("qrc:/Source/View/NavigationManager.qml"), "NavigationManager", 1, 0, "NavigationManager");
     qmlRegisterSingletonInstance<AppState>("AppState", 1, 0, "AppState", AppState::instance());
 
-    // Register AuthViewModel as context property
+    // Register AuthViewModel
     AuthViewModel authViewModel;
     engine.rootContext()->setContextProperty("authViewModel", &authViewModel);
 
-    // Register SongViewModel as context property
+    // Register SongViewModel
     SongViewModel songViewModel;
     engine.rootContext()->setContextProperty("songViewModel", &songViewModel);
 
-    // Register PlaylistViewModel as context property
+    // Register PlaylistViewModel
     PlaylistViewModel playlistViewModel;
     engine.rootContext()->setContextProperty("playlistViewModel", &playlistViewModel);
 
-    const QUrl url(QStringLiteral("qrc:/Source/View/Main.qml"));
+    // Register AdminViewModel
+    AdminViewModel adminViewModel;
+    engine.rootContext()->setContextProperty("adminViewModel", &adminViewModel);
+
+    const QUrl url("qrc:/Source/View/Main.qml");
     engine.load(url);
 
     return app.exec();

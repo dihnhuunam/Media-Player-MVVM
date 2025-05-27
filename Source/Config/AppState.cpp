@@ -79,6 +79,11 @@ int AppState::userId() const
     return m_userId;
 }
 
+QString AppState::getToken() const
+{
+    return m_settings->value("jwt_token", "").toString();
+}
+
 void AppState::setCurrentPlaylistName(const QString &name)
 {
     if (m_currentPlaylistName != name)

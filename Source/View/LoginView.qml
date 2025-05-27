@@ -2,6 +2,7 @@ import QtQuick 6.8
 import QtQuick.Controls 6.8
 import QtQuick.Layouts 6.8
 import "./Components"
+import AppState 1.0
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
@@ -221,11 +222,21 @@ Item {
         target: authViewModel
         function onLoginFinished(success, message) {
             console.log("Login message:", message);
-            notificationRect.message = success ? "Login Success" : message || "Login Failed. Please Try Again";
+            notificationRect.message = success ? "Login successful" : message || "Login failed. Please try again";
             notificationRect.notificationColor = success ? "#48bb78" : "#e53e3e";
             notificationRect.isPersistent = !success;
             notificationRect.isVisible = true;
             if (success) {
+                // Check role from AppState
+                let userRole = AppState.role;
+                console.log("User role:", userRole);
+                if (userRole === "admin") {
+                    NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                    console.log("Navigate to AdminView");
+                } else {
+                    NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                    console.log("Navigate to MediaPlayerView");
+                }
                 navigationTimer.start();
             }
         }
@@ -237,7 +248,7 @@ Item {
         running: false
         repeat: false
         onTriggered: {
-            NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+            NavigationManager.navigateTo(AppState.role === "admin" ? "qrc:/Source/View/Admin.qml" : "qrc:/Source/View/MediaPlayerView.qml");
         }
     }
 

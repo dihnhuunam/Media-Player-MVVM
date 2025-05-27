@@ -33,6 +33,7 @@ public:
     QString dateOfBirth() const;
     QString role() const;
     int userId() const;
+    Q_INVOKABLE QString getToken() const;
 
 public slots:
     void setCurrentPlaylistName(const QString &name);

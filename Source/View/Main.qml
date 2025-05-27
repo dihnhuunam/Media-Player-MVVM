@@ -27,10 +27,15 @@ ApplicationWindow {
         NavigationManager.loader = loader;
         console.log("Main: NavigationManager loader set");
 
-        // Kiểm tra trạng thái đăng nhập
         if (AppState.isAuthenticated) {
-            console.log("Main: User is authenticated, navigating to MediaPlayerView");
-            NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+            console.log("Main: User is authenticated, role:", AppState.role);
+            if (AppState.role === "admin") {
+                NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                console.log("Main: Navigating to AdminView");
+            } else {
+                NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                console.log("Main: Navigating to MediaPlayerView");
+            }
         } else {
             console.log("Main: User is not authenticated, staying at LoginView");
         }
