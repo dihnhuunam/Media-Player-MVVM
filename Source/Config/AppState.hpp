@@ -18,7 +18,7 @@ class AppState : public QObject
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(QString dateOfBirth READ dateOfBirth WRITE setDateOfBirth NOTIFY dateOfBirthChanged)
     Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged)
-    Q_PROPERTY(int userId READ userId WRITE setUserId NOTIFY userIdChanged) // Thêm thuộc tính userId
+    Q_PROPERTY(int userId READ userId WRITE setUserId NOTIFY userIdChanged)
 
 public:
     static AppState *instance();
@@ -32,7 +32,7 @@ public:
     QString name() const;
     QString dateOfBirth() const;
     QString role() const;
-    int userId() const; 
+    int userId() const;
 
 public slots:
     void setCurrentPlaylistName(const QString &name);
@@ -45,7 +45,7 @@ public slots:
     void setName(const QString &name);
     void setDateOfBirth(const QString &dob);
     void setRole(const QString &role);
-    void setUserId(int id); 
+    void setUserId(int id);
     void loadUserInfo();
     void clearUserInfo();
 
@@ -60,7 +60,7 @@ signals:
     void nameChanged();
     void dateOfBirthChanged();
     void roleChanged();
-    void userIdChanged(); 
+    void userIdChanged();
 
 private:
     AppState(QObject *parent = nullptr);
@@ -75,7 +75,7 @@ private:
     QString m_dateOfBirth;
     QString m_role;
     bool m_isAuthenticated;
-    int m_userId; 
+    int m_userId;
     QSettings *m_settings;
 };
 
