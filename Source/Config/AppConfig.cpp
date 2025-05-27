@@ -61,116 +61,160 @@ QString AppConfig::getAuthRegisterEndpoint() const
 QString AppConfig::getAuthUpdateEndpoint(int userId) const
 {
     QString endpoint = envVariables.value("AUTH_UPDATE_ENDPOINT", getBaseUrl() + "/api/auth/users");
-    return endpoint + "/" + QString::number(userId);
+    QString url = endpoint + "/" + QString::number(userId);
+    qDebug() << "AppConfig: Generated AUTH_UPDATE_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getAuthGetUsersEndpoint() const
 {
-    return envVariables.value("AUTH_GET_USERS_ENDPOINT", getBaseUrl() + "/api/auth/users");
+    QString url = envVariables.value("AUTH_GET_USERS_ENDPOINT", getBaseUrl() + "/api/auth/users");
+    qDebug() << "AppConfig: Generated AUTH_GET_USERS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getAuthGetUserByIdEndpoint(int userId) const
 {
     QString endpoint = envVariables.value("AUTH_GET_USER_BY_ID_ENDPOINT", getBaseUrl() + "/api/auth/users");
-    return endpoint + "/" + QString::number(userId);
+    QString url = endpoint + "/" + QString::number(userId);
+    qDebug() << "AppConfig: Generated AUTH_GET_USER_BY_ID_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsEndpoint() const
 {
-    return envVariables.value("SONGS_ENDPOINT", getBaseUrl() + "/api/songs");
+    QString url = envVariables.value("SONGS_ENDPOINT", getBaseUrl() + "/api/songs");
+    qDebug() << "AppConfig: Generated SONGS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsSearchEndpoint() const
 {
-    return envVariables.value("SONGS_SEARCH_ENDPOINT", getBaseUrl() + "/api/songs/search");
+    QString url = envVariables.value("SONGS_SEARCH_ENDPOINT", getBaseUrl() + "/api/songs/search");
+    qDebug() << "AppConfig: Generated SONGS_SEARCH_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsStreamEndpoint(int songId) const
 {
     QString endpoint = envVariables.value("SONGS_STREAM_ENDPOINT", getBaseUrl() + "/api/songs/stream");
-    return endpoint + "/" + QString::number(songId);
+    QString url = endpoint + "/" + QString::number(songId);
+    qDebug() << "AppConfig: Generated SONGS_STREAM_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsSearchByGenresEndpoint() const
 {
-    return envVariables.value("SONGS_SEARCH_BY_GENRES_ENDPOINT", getBaseUrl() + "/api/songs/search-by-genres");
+    QString url = envVariables.value("SONGS_SEARCH_BY_GENRES_ENDPOINT", getBaseUrl() + "/api/songs/search-by-genres");
+    qDebug() << "AppConfig: Generated SONGS_SEARCH_BY_GENRES_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsUpdateEndpoint(int songId) const
 {
     QString endpoint = envVariables.value("SONGS_UPDATE_ENDPOINT", getBaseUrl() + "/api/songs");
-    return endpoint + "/" + QString::number(songId);
+    QString url = endpoint + "/" + QString::number(songId);
+    qDebug() << "AppConfig: Generated SONGS_UPDATE_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getSongsDeleteEndpoint(int songId) const
 {
     QString endpoint = envVariables.value("SONGS_DELETE_ENDPOINT", getBaseUrl() + "/api/songs");
-    return endpoint + "/" + QString::number(songId);
+    QString url = endpoint + "/" + QString::number(songId);
+    qDebug() << "AppConfig: Generated SONGS_DELETE_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_ENDPOINT", getBaseUrl() + "/api/playlists");
+    QString url = envVariables.value("PLAYLISTS_ENDPOINT", getBaseUrl() + "/api/playlists");
+    qDebug() << "AppConfig: Generated PLAYLISTS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistEndpoint(int playlistId) const
 {
-    return getPlaylistsEndpoint() + "/" + QString::number(playlistId);
+    QString url = getPlaylistsEndpoint() + "/" + QString::number(playlistId);
+    qDebug() << "AppConfig: Generated PLAYLIST_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsSongsEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_SONGS_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    QString url = envVariables.value("PLAYLISTS_SONGS_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    qDebug() << "AppConfig: Generated PLAYLISTS_SONGS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistSongsEndpoint(int playlistId) const
 {
-    return getPlaylistsEndpoint() + "/" + QString::number(playlistId) + "/songs";
+    QString url = getPlaylistsEndpoint() + "/" + QString::number(playlistId) + "/songs";
+    qDebug() << "AppConfig: Generated PLAYLIST_SONGS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistSongEndpoint(int playlistId, int songId) const
 {
-    return getPlaylistSongsEndpoint(playlistId) + "/" + QString::number(songId);
+    QString url = getPlaylistSongsEndpoint(playlistId) + "/" + QString::number(songId);
+    qDebug() << "AppConfig: Generated PLAYLIST_SONG_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsSearchEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_SEARCH_ENDPOINT", getBaseUrl() + "/api/playlists/search");
+    QString url = envVariables.value("PLAYLISTS_SEARCH_ENDPOINT", getBaseUrl() + "/api/playlists/search");
+    qDebug() << "AppConfig: Generated PLAYLISTS_SEARCH_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistSongsSearchEndpoint(int playlistId) const
 {
-    return envVariables.value("PLAYLISTS_SEARCH_SONGS_ENDPOINT", getBaseUrl() + "/api/playlists/" + QString::number(playlistId) + "/songs/search");
+    QString url = envVariables.value("PLAYLISTS_SEARCH_SONGS_ENDPOINT", getBaseUrl() + "/api/playlists/" + QString::number(playlistId) + "/songs/search");
+    qDebug() << "AppConfig: Generated PLAYLISTS_SEARCH_SONGS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsCreateEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_CREATE_ENDPOINT", getBaseUrl() + "/api/playlists");
+    QString url = envVariables.value("PLAYLISTS_CREATE_ENDPOINT", getBaseUrl() + "/api/playlists");
+    qDebug() << "AppConfig: Generated PLAYLISTS_CREATE_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsGetUserPlaylistsEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_GET_USER_PLAYLISTS_ENDPOINT", getBaseUrl() + "/api/playlists");
+    QString url = envVariables.value("PLAYLISTS_GET_USER_PLAYLISTS_ENDPOINT", getBaseUrl() + "/api/playlists");
+    qDebug() << "AppConfig: Generated PLAYLISTS_GET_USER_PLAYLISTS_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsAddSongEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_ADD_SONG_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    QString url = envVariables.value("PLAYLISTS_ADD_SONG_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    qDebug() << "AppConfig: Generated PLAYLISTS_ADD_SONG_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsUpdateNameEndpoint(int playlistId) const
 {
     QString endpoint = envVariables.value("PLAYLISTS_UPDATE_NAME_ENDPOINT", getBaseUrl() + "/api/playlists");
-    return endpoint + "/" + QString::number(playlistId);
+    QString url = endpoint + "/" + QString::number(playlistId);
+    qDebug() << "AppConfig: Generated PLAYLISTS_UPDATE_NAME_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsRemoveSongEndpoint() const
 {
-    return envVariables.value("PLAYLISTS_REMOVE_SONG_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    QString url = envVariables.value("PLAYLISTS_REMOVE_SONG_ENDPOINT", getBaseUrl() + "/api/playlists/songs");
+    qDebug() << "AppConfig: Generated PLAYLISTS_REMOVE_SONG_ENDPOINT:" << url;
+    return url;
 }
 
 QString AppConfig::getPlaylistsDeleteEndpoint(int playlistId) const
 {
     QString endpoint = envVariables.value("PLAYLISTS_DELETE_ENDPOINT", getBaseUrl() + "/api/playlists");
-    return endpoint + "/" + QString::number(playlistId);
+    QString url = endpoint + "/" + QString::number(playlistId);
+    qDebug() << "AppConfig: Generated PLAYLISTS_DELETE_ENDPOINT:" << url;
+    return url;
 }
