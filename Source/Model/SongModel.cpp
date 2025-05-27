@@ -5,7 +5,10 @@
 #include <QUrlQuery>
 #include <QDebug>
 
-SongModel::SongModel(QObject *parent) : QAbstractListModel(parent), m_networkManager(new QNetworkAccessManager(this)) {}
+SongModel::SongModel(QObject *parent)
+    : QAbstractListModel(parent), m_networkManager(new QNetworkAccessManager(this))
+{
+}
 
 int SongModel::rowCount(const QModelIndex &parent) const
 {
@@ -92,7 +95,6 @@ void SongModel::onSearchReply()
                 QString title = obj["title"].toString().trimmed();
                 song[TitleRole] = title.isEmpty() ? "Unknown Title" : title;
 
-                // Convert artists JSON array to QVariantList
                 QVariantList artists;
                 QJsonArray artistArray = obj["artists"].toArray();
                 if (artistArray.isEmpty())
@@ -110,7 +112,6 @@ void SongModel::onSearchReply()
 
                 song[FilePathRole] = obj["file_path"].toString();
 
-                // Convert genres JSON array to QVariantList
                 QVariantList genres;
                 QJsonArray genreArray = obj["genres"].toArray();
                 for (const QJsonValue &genre : genreArray)
@@ -159,7 +160,6 @@ void SongModel::onFetchAllSongsReply()
                 QString title = obj["title"].toString().trimmed();
                 song[TitleRole] = title.isEmpty() ? "Unknown Title" : title;
 
-                // Convert artists JSON array to QVariantList
                 QVariantList artists;
                 QJsonArray artistArray = obj["artists"].toArray();
                 if (artistArray.isEmpty())
@@ -177,7 +177,6 @@ void SongModel::onFetchAllSongsReply()
 
                 song[FilePathRole] = obj["file_path"].toString();
 
-                // Convert genres JSON array to QVariantList
                 QVariantList genres;
                 QJsonArray genreArray = obj["genres"].toArray();
                 for (const QJsonValue &genre : genreArray)

@@ -24,17 +24,60 @@ AppState *AppState::instance()
     return m_instance;
 }
 
-QString AppState::currentPlaylistName() const { return m_currentPlaylistName; }
-QVariantList AppState::currentMediaFiles() const { return m_currentMediaFiles; }
-QString AppState::currentMediaTitle() const { return m_currentMediaTitle; }
-QString AppState::currentMediaArtist() const { return m_currentMediaArtist; }
-int AppState::currentPlaylistId() const { return m_currentPlaylistId; }
-bool AppState::isAuthenticated() const { return m_isAuthenticated; }
-QString AppState::email() const { return m_email; }
-QString AppState::name() const { return m_name; }
-QString AppState::dateOfBirth() const { return m_dateOfBirth; }
-QString AppState::role() const { return m_role; }
-int AppState::userId() const { return m_userId; }
+QString AppState::currentPlaylistName() const
+{
+    return m_currentPlaylistName;
+}
+
+QVariantList AppState::currentMediaFiles() const
+{
+    return m_currentMediaFiles;
+}
+
+QString AppState::currentMediaTitle() const
+{
+    return m_currentMediaTitle;
+}
+
+QString AppState::currentMediaArtist() const
+{
+    return m_currentMediaArtist;
+}
+
+int AppState::currentPlaylistId() const
+{
+    return m_currentPlaylistId;
+}
+
+bool AppState::isAuthenticated() const
+{
+    return m_isAuthenticated;
+}
+
+QString AppState::email() const
+{
+    return m_email;
+}
+
+QString AppState::name() const
+{
+    return m_name;
+}
+
+QString AppState::dateOfBirth() const
+{
+    return m_dateOfBirth;
+}
+
+QString AppState::role() const
+{
+    return m_role;
+}
+
+int AppState::userId() const
+{
+    return m_userId;
+}
 
 void AppState::setCurrentPlaylistName(const QString &name)
 {

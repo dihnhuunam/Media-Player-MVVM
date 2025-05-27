@@ -111,16 +111,14 @@ void AuthModel::updateProfile(int userId, const QString &name, const QString &do
         }
     }
 
-    // Add password fields if both are provided
     if (!currentPassword.isEmpty() && !newPassword.isEmpty())
     {
         json["currentPassword"] = currentPassword;
-        json["password"] = newPassword; // API expects "password" for new password
+        json["password"] = newPassword;
         hasData = true;
     }
     else if (currentPassword.isEmpty() != newPassword.isEmpty())
     {
-        // One password field is provided but not the other
         emit profileUpdateResult(false, "Both current and new passwords are required for password change");
         return;
     }

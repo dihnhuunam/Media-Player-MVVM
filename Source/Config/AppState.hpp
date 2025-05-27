@@ -32,7 +32,7 @@ public:
     QString name() const;
     QString dateOfBirth() const;
     QString role() const;
-    int userId() const; // Thêm getter cho userId
+    int userId() const; 
 
 public slots:
     void setCurrentPlaylistName(const QString &name);

@@ -5,7 +5,10 @@
 #include <QJsonArray>
 #include <QUrlQuery>
 
-PlaylistModel::PlaylistModel(QObject *parent) : QAbstractListModel(parent), m_networkManager(), m_settings(new QSettings("MediaPlayer", "Auth", this)) {}
+PlaylistModel::PlaylistModel(QObject *parent)
+    : QAbstractListModel(parent), m_networkManager(), m_settings(new QSettings("MediaPlayer", "Auth", this))
+{
+}
 
 int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
