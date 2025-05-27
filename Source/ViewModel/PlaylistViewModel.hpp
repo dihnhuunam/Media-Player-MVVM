@@ -9,6 +9,8 @@ class PlaylistViewModel : public QObject
     Q_OBJECT
     Q_PROPERTY(PlaylistModel *playlistModel READ playlistModel CONSTANT)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(int searchLimit READ searchLimit WRITE setSearchLimit NOTIFY searchLimitChanged)
+    Q_PROPERTY(int searchOffset READ searchOffset WRITE setSearchOffset NOTIFY searchOffsetChanged)
 
 public:
     explicit PlaylistViewModel(QObject *parent = nullptr);
@@ -16,7 +18,11 @@ public:
 
     PlaylistModel *playlistModel() const { return m_playlistModel; }
     QString errorMessage() const { return m_errorMessage; }
+    int searchLimit() const { return m_searchLimit; }
+    int searchOffset() const { return m_searchOffset; }
 
+    Q_INVOKABLE void setSearchLimit(int limit);
+    Q_INVOKABLE void setSearchOffset(int offset);
     Q_INVOKABLE void loadPlaylists();
     Q_INVOKABLE void createNewPlaylist(const QString &name);
     Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name);
@@ -38,6 +44,8 @@ signals:
     void songsLoaded(int playlistId, const QVariantList &songs, const QString &message);
     void searchResultsLoaded(const QVariantList &playlists, const QString &message);
     void songSearchResultsLoaded(int playlistId, const QVariantList &songs, const QString &message);
+    void searchLimitChanged();
+    void searchOffsetChanged();
 
 private slots:
     void handleError(const QString &error);
@@ -53,6 +61,8 @@ private slots:
 private:
     PlaylistModel *m_playlistModel;
     QString m_errorMessage;
+    int m_searchLimit = 10;
+    int m_searchOffset = 0;
 };
 
 #endif // PLAYLISTVIEWMODEL_H

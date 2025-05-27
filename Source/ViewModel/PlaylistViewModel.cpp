@@ -29,6 +29,26 @@ PlaylistViewModel::~PlaylistViewModel()
 {
 }
 
+void PlaylistViewModel::setSearchLimit(int limit)
+{
+    if (m_searchLimit != limit)
+    {
+        m_searchLimit = limit;
+        emit searchLimitChanged();
+        qDebug() << "PlaylistViewModel: Search limit set to" << limit;
+    }
+}
+
+void PlaylistViewModel::setSearchOffset(int offset)
+{
+    if (m_searchOffset != offset)
+    {
+        m_searchOffset = offset;
+        emit searchOffsetChanged();
+        qDebug() << "PlaylistViewModel: Search offset set to" << offset;
+    }
+}
+
 void PlaylistViewModel::loadPlaylists()
 {
     if (!AppState::instance()->isAuthenticated())
@@ -114,7 +134,7 @@ void PlaylistViewModel::search(const QString &query)
         qDebug() << "PlaylistViewModel: User is not logged in";
         return;
     }
-    m_playlistModel->search(query);
+    m_playlistModel->search(query, m_searchLimit, m_searchOffset);
 }
 
 void PlaylistViewModel::searchSongsInPlaylist(int playlistId, const QString &query)
@@ -125,7 +145,7 @@ void PlaylistViewModel::searchSongsInPlaylist(int playlistId, const QString &que
         qDebug() << "PlaylistViewModel: User is not logged in";
         return;
     }
-    m_playlistModel->searchSongsInPlaylist(playlistId, query);
+    m_playlistModel->searchSongsInPlaylist(playlistId, query, m_searchLimit, m_searchOffset);
 }
 
 void PlaylistViewModel::handleError(const QString &error)

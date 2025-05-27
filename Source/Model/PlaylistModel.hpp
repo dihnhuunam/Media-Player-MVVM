@@ -51,8 +51,8 @@ public:
     Q_INVOKABLE void removeSongFromPlaylist(int playlistId, int songId);
     Q_INVOKABLE void deletePlaylist(int playlistId);
     Q_INVOKABLE void loadSongsInPlaylist(int playlistId);
-    Q_INVOKABLE void search(const QString &query);
-    Q_INVOKABLE void searchSongsInPlaylist(int playlistId, const QString &query);
+    Q_INVOKABLE void search(const QString &query, int limit = 10, int offset = 0);
+    Q_INVOKABLE void searchSongsInPlaylist(int playlistId, const QString &query, int limit = 10, int offset = 0);
 
 signals:
     void playlistsChanged();
