@@ -10,10 +10,15 @@ class AdminViewModel : public QObject
 public:
     explicit AdminViewModel(QObject *parent = nullptr);
 
-    Q_INVOKABLE void uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath);
+public slots:
+    void uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath);
+    void updateSong(int songId, const QString &title, const QString &genres, const QString &artists);
+    void deleteSong(int songId);
 
 signals:
     void uploadFinished(bool success, const QString &message);
+    void updateFinished(bool success, const QString &message);
+    void deleteFinished(bool success, const QString &message);
 
 private:
     AdminModel *m_adminModel;

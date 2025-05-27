@@ -11,7 +11,7 @@ Item {
     property real formFieldFontSize: 22
     property real formSpacing: 18
     property real formWidth: 385
-    property real formHeight: 550
+    property real formHeight: 650 // Tăng chiều cao để chứa ListView
     property var selectedFilePaths: []
 
     Rectangle {
@@ -182,6 +182,44 @@ Item {
                                 position: 1.0
                                 color: parent.hovered ? "#2c5282" : "#2a4365"
                             }
+                        }
+                    }
+                }
+
+                // Thêm ListView để hiển thị các file đã chọn
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 100 * scaleFactor
+                    radius: 12 * scaleFactor
+                    color: "#f6f8fa"
+                    border.color: "#d0d7de"
+                    border.width: 1 * scaleFactor
+                    clip: true
+
+                    ListView {
+                        id: selectedFilesView
+                        anchors.fill: parent
+                        anchors.margins: 8 * scaleFactor
+                        model: selectedFilePaths
+                        interactive: true
+                        spacing: 4 * scaleFactor
+
+                        delegate: Text {
+                            text: modelData.split("/").pop() // Hiển thị tên file thay vì toàn bộ đường dẫn
+                            font.pixelSize: 16 * scaleFactor
+                            font.family: "Arial"
+                            color: "#2d3748"
+                            width: parent.width
+                            elide: Text.ElideMiddle
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "No files selected"
+                            font.pixelSize: 16 * scaleFactor
+                            font.family: "Arial"
+                            color: "#2d3748"
+                            visible: selectedFilesView.count === 0
                         }
                     }
                 }

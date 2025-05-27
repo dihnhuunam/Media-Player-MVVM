@@ -5,6 +5,7 @@
 #include <QHttpMultiPart>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QFileInfo>
 #include <QMimeDatabase>
 #include <QDebug>
@@ -16,11 +17,9 @@ AdminModel::AdminModel(QObject *parent)
 
 void AdminModel::uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath)
 {
-    // Use AppConfig to get the songs endpoint
     QUrl url(AppConfig::instance().getSongsEndpoint());
     QNetworkRequest request(url);
 
-    // Authentication token
     QString token = AppState::instance()->getToken();
     if (token.isEmpty())
     {
@@ -29,7 +28,6 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
     }
     request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
 
-    // Validate inputs
     if (title.isEmpty() || genres.isEmpty() || artists.isEmpty() || filePath.isEmpty())
     {
         emit uploadFinished(false, "All fields (title, genres, artists, file) are required");
@@ -38,25 +36,21 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
 
     QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
-    // Add title
     QHttpPart titlePart;
     titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"title\""));
     titlePart.setBody(title.toUtf8());
     multiPart->append(titlePart);
 
-    // Add genres
     QHttpPart genresPart;
     genresPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"genres\""));
     genresPart.setBody(genres.toUtf8());
     multiPart->append(genresPart);
 
-    // Add artists
     QHttpPart artistsPart;
     artistsPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"artists\""));
     artistsPart.setBody(artists.toUtf8());
     multiPart->append(artistsPart);
 
-    // Add file
     QFile *file = new QFile(filePath);
     if (!file->exists())
     {
@@ -77,7 +71,6 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
     QHttpPart filePart;
     filePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant(QString("form-data; name=\"file\"; filename=\"%1\"").arg(fileInfo.fileName())));
 
-    // Determine MIME type
     QMimeDatabase mimeDb;
     QMimeType mimeType = mimeDb.mimeTypeForFile(fileInfo);
     QString mimeTypeName = mimeType.name();
@@ -106,20 +99,12 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
     }
     filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant(mimeTypeName));
     filePart.setBodyDevice(file);
-    file->setParent(multiPart); // Ensure file is deleted with multiPart
+    file->setParent(multiPart);
     multiPart->append(filePart);
 
-    // Log request headers for debugging
+    qDebug() << "AdminModel: Sending upload request to" << url.toString();
     QNetworkReply *reply = m_networkManager->post(request, multiPart);
-    multiPart->setParent(reply); // Ensure multiPart is deleted with reply
-
-    // Log headers
-    qDebug() << "AdminModel: Sending request to" << url.toString();
-    qDebug() << "AdminModel: Headers:";
-    for (const auto &header : request.rawHeaderList())
-    {
-        qDebug() << header << ":" << request.rawHeader(header);
-    }
+    multiPart->setParent(reply);
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
@@ -127,18 +112,131 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: HTTP Status:" << statusCode << "Response:" << responseData;
 
-        if (reply->error() == QNetworkReply::NoError && statusCode == 201) {
+        if (reply->error() == QNetworkReply::NoError && statusCode == 201)
+        {
             QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
-            if (!doc.isNull() && doc.isObject()) {
+            if (!doc.isNull() && doc.isObject())
+            {
                 QJsonObject obj = doc.object();
                 QString message = obj.value("message").toString("Song added successfully");
                 int songId = obj.value("songId").toInt(-1);
                 emit uploadFinished(true, message, songId);
-            } else {
+            }
+            else
+            {
                 emit uploadFinished(false, "Invalid response format from server: " + responseData);
             }
-        } else {
+        }
+        else
+        {
             emit uploadFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+        }
+        reply->deleteLater(); });
+}
+
+void AdminModel::updateSong(int songId, const QString &title, const QString &genres, const QString &artists)
+{
+    QUrl url(AppConfig::instance().getSongsUpdateEndpoint(songId));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QString token = AppState::instance()->getToken();
+    if (token.isEmpty())
+    {
+        emit updateFinished(false, "No authentication token available");
+        return;
+    }
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+
+    if (title.isEmpty() || genres.isEmpty() || artists.isEmpty())
+    {
+        emit updateFinished(false, "All fields (title, genres, artists) are required");
+        return;
+    }
+
+    QJsonObject json;
+    json["title"] = title;
+
+    QJsonArray genresArray;
+    for (const QString &genre : genres.split(",", Qt::SkipEmptyParts))
+    {
+        genresArray.append(genre.trimmed());
+    }
+    json["genres"] = genresArray;
+
+    QJsonArray artistsArray;
+    for (const QString &artist : artists.split(",", Qt::SkipEmptyParts))
+    {
+        artistsArray.append(artist.trimmed());
+    }
+    json["artists"] = artistsArray;
+
+    QJsonDocument doc(json);
+    QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        QString responseData = QString::fromUtf8(reply->readAll());
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qDebug() << "AdminModel: Update song HTTP Status:" << statusCode << "Response:" << responseData;
+
+        if (reply->error() == QNetworkReply::NoError && statusCode == 200)
+        {
+            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            if (!doc.isNull() && doc.isObject())
+            {
+                QString message = doc.object().value("message").toString("Song updated successfully");
+                emit updateFinished(true, message);
+            }
+            else
+            {
+                emit updateFinished(false, "Invalid response format from server: " + responseData);
+            }
+        }
+        else
+        {
+            emit updateFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+        }
+        reply->deleteLater(); });
+}
+
+void AdminModel::deleteSong(int songId)
+{
+    QUrl url(AppConfig::instance().getSongsDeleteEndpoint(songId));
+    QNetworkRequest request(url);
+
+    QString token = AppState::instance()->getToken();
+    if (token.isEmpty())
+    {
+        emit deleteFinished(false, "No authentication token available");
+        return;
+    }
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+
+    QNetworkReply *reply = m_networkManager->deleteResource(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        QString responseData = QString::fromUtf8(reply->readAll());
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qDebug() << "AdminModel: Delete song HTTP Status:" << statusCode << "Response:" << responseData;
+
+        if (reply->error() == QNetworkReply::NoError && statusCode == 200)
+        {
+            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            if (!doc.isNull() && doc.isObject())
+            {
+                QString message = doc.object().value("message").toString("Song deleted successfully");
+                emit deleteFinished(true, message);
+            }
+            else
+            {
+                emit deleteFinished(false, "Invalid response format from server: " + responseData);
+            }
+        }
+        else
+        {
+            emit deleteFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
         }
         reply->deleteLater(); });
 }

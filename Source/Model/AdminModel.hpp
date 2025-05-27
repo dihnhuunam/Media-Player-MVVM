@@ -12,10 +12,15 @@ class AdminModel : public QObject
 public:
     explicit AdminModel(QObject *parent = nullptr);
 
+public slots:
     void uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath);
+    void updateSong(int songId, const QString &title, const QString &genres, const QString &artists);
+    void deleteSong(int songId);
 
 signals:
     void uploadFinished(bool success, const QString &message, int songId = -1);
+    void updateFinished(bool success, const QString &message);
+    void deleteFinished(bool success, const QString &message);
 
 private:
     QNetworkAccessManager *m_networkManager;
