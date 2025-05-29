@@ -19,7 +19,7 @@ Item {
 
     property real playlistItemHeight: 50
     property real playlistItemFontSize: 16
-    property real playlistItemMargin: 30
+    property real playlistItemHeightMargin: 30
     property real playlistSpacing: 6
 
     Rectangle {
@@ -165,8 +165,8 @@ Item {
                 Layout.preferredWidth: parent.width * 0.8
                 Layout.topMargin: playlistSpacing * scaleFactor
                 Layout.bottomMargin: playlistSpacing * scaleFactor
-                Layout.leftMargin: playlistItemMargin * scaleFactor
-                Layout.rightMargin: playlistItemMargin * scaleFactor
+                Layout.leftMargin: playlistItemHeightMargin * scaleFactor
+                Layout.rightMargin: playlistItemHeightMargin * scaleFactor
                 Layout.alignment: Qt.AlignHCenter
                 clip: true
                 interactive: true
@@ -181,7 +181,7 @@ Item {
                     color: "#ffffff"
                     border.color: "#d0d7de"
                     border.width: 1
-                    visible: model && model.title && model.artists
+                    visible: model && model.title
 
                     RowLayout {
                         anchors.fill: parent
@@ -190,7 +190,7 @@ Item {
                         spacing: 8 * scaleFactor
 
                         Text {
-                            text: model ? (index + 1) + ". " + (model.title || "Unknown Title") + " - " + (Array.isArray(model.artists) ? model.artists.join(", ") : model.artists || "Unknown Artist") : ""
+                            text: model ? (index + 1) + ". " + (model.title || "Unknown Title") + " - " + (Array.isArray(model.artists) && model.artists.length > 0 ? model.artists.join(", ") : model.artists || "Unknown Artist") + " - " + (Array.isArray(model.genres) && model.genres.length > 0 ? model.genres.join(", ") : model.genres || "Unknown Genre") : ""
                             font.pixelSize: playlistItemFontSize * scaleFactor
                             font.family: "Arial"
                             color: "#1a202c"
@@ -219,12 +219,10 @@ Item {
                             z: 1
                             onClicked: {
                                 if (model) {
+                                    console.log("AdminMediaFiles: Fetching song data - id:", model.id);
+                                    adminViewModel.fetchSongById(model.id || -1);
                                     popup.songId = model.id || -1;
-                                    popup.songTitle = model.title || "Unknown Title";
-                                    popup.songArtists = Array.isArray(model.artists) ? model.artists.join(", ") : model.artists || "Unknown Artist";
-                                    popup.songGenres = Array.isArray(model.genres) ? model.genres.join(", ") : model.genres || "";
                                     popup.open();
-                                    console.log("AdminMediaFiles: More button clicked for song:", popup.songTitle);
                                 }
                             }
                             onHoveredChanged: {
@@ -260,9 +258,6 @@ Item {
                     }
 
                     property int songId: -1
-                    property string songTitle: ""
-                    property string songArtists: ""
-                    property string songGenres: ""
 
                     ColumnLayout {
                         anchors.fill: parent
@@ -279,12 +274,9 @@ Item {
                             font.family: "Arial"
                             onClicked: {
                                 editPopup.songId = popup.songId;
-                                editPopup.title = popup.songTitle;
-                                editPopup.genres = popup.songGenres;
-                                editPopup.artists = popup.songArtists;
                                 editPopup.open();
                                 popup.close();
-                                console.log("AdminMediaFiles: Edit clicked for song ID:", popup.songId);
+                                console.log("AdminMediaFiles: EditPopup opened for song ID:", popup.songId);
                             }
                             contentItem: Text {
                                 text: parent.text
@@ -398,7 +390,7 @@ Item {
                             id: editGenresInput
                             Layout.fillWidth: true
                             text: editPopup.genres
-                            placeholderText: "Genres (comma-separated)"
+                            placeholderText: "Genre"
                             placeholderTextColor: "#718096"
                             color: "#1a202c"
                             font.pixelSize: 16 * scaleFactor
@@ -415,7 +407,7 @@ Item {
                             id: editArtistsInput
                             Layout.fillWidth: true
                             text: editPopup.artists
-                            placeholderText: "Artists (comma-separated)"
+                            placeholderText: "Artist"
                             placeholderTextColor: "#718096"
                             color: "#1a202c"
                             font.pixelSize: 16 * scaleFactor
@@ -527,6 +519,20 @@ Item {
                     songViewModel.fetchAllSongs();
                 }
                 console.log("AdminMediaFiles: Delete finished, success:", success, "message:", message);
+            }
+
+            function onSongFetched(success, title, genres, artists, errorMessage) {
+                if (success) {
+                    editPopup.title = title;
+                    editPopup.genres = genres;
+                    editPopup.artists = artists;
+                    console.log("AdminMediaFiles: Song fetched - title:", title, "genres:", genres, "artists:", artists);
+                } else {
+                    notificationPopup.message = "Failed to fetch song details: " + errorMessage;
+                    notificationPopup.notificationColor = "#e53e3e";
+                    notificationPopup.open();
+                    console.log("AdminMediaFiles: Song fetch failed:", errorMessage);
+                }
             }
         }
 

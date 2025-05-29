@@ -126,6 +126,14 @@ QString AppConfig::getSongsDeleteEndpoint(int songId) const
     return url;
 }
 
+QString AppConfig::getSongByIdEndpoint(int songId) const
+{
+    QString endpoint = envVariables.value("SONG_BY_ID_ENDPOINT", getBaseUrl() + "/api/songs");
+    QString url = endpoint + "/" + QString::number(songId);
+    qDebug() << "AppConfig: Generated SONG_BY_ID_ENDPOINT:" << url;
+    return url;
+}
+
 QString AppConfig::getPlaylistsEndpoint() const
 {
     QString url = envVariables.value("PLAYLISTS_ENDPOINT", getBaseUrl() + "/api/playlists");

@@ -9,6 +9,7 @@ AdminViewModel::AdminViewModel(QObject *parent)
         emit uploadFinished(success, message); });
     connect(m_adminModel, &AdminModel::updateFinished, this, &AdminViewModel::updateFinished);
     connect(m_adminModel, &AdminModel::deleteFinished, this, &AdminViewModel::deleteFinished);
+    connect(m_adminModel, &AdminModel::songFetched, this, &AdminViewModel::songFetched);
 }
 
 void AdminViewModel::uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath)
@@ -24,4 +25,9 @@ void AdminViewModel::updateSong(int songId, const QString &title, const QString 
 void AdminViewModel::deleteSong(int songId)
 {
     m_adminModel->deleteSong(songId);
+}
+
+void AdminViewModel::fetchSongById(int songId)
+{
+    m_adminModel->fetchSongById(songId);
 }

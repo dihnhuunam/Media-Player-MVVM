@@ -164,30 +164,38 @@ void AdminModel::updateSong(int songId, const QString &title, const QString &gen
     }
     request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
 
-    if (title.isEmpty() || genres.isEmpty() || artists.isEmpty())
+    if (title.isEmpty() && genres.isEmpty() && artists.isEmpty())
     {
-        emit updateFinished(false, "All fields (title, genres, artists) are required");
+        emit updateFinished(false, "At least one field (title, genres, or artists) is required");
         return;
     }
 
     QJsonObject json;
-    json["title"] = title;
-
-    QJsonArray genresArray;
-    for (const QString &genre : genres.split(",", Qt::SkipEmptyParts))
+    if (!title.isEmpty())
     {
-        genresArray.append(genre.trimmed());
+        json["title"] = title;
     }
-    json["genres"] = genresArray;
-
-    QJsonArray artistsArray;
-    for (const QString &artist : artists.split(",", Qt::SkipEmptyParts))
+    if (!genres.isEmpty())
     {
-        artistsArray.append(artist.trimmed());
+        QJsonArray genresArray;
+        for (const QString &genre : genres.split(",", Qt::SkipEmptyParts))
+        {
+            genresArray.append(genre.trimmed());
+        }
+        json["genres"] = genresArray;
     }
-    json["artists"] = artistsArray;
+    if (!artists.isEmpty())
+    {
+        QJsonArray artistsArray;
+        for (const QString &artist : artists.split(",", Qt::SkipEmptyParts))
+        {
+            artistsArray.append(artist.trimmed());
+        }
+        json["artists"] = artistsArray;
+    }
 
     QJsonDocument doc(json);
+    qDebug() << "AdminModel: Update song payload:" << QString(doc.toJson(QJsonDocument::Compact));
     QNetworkReply *reply = m_networkManager->put(request, doc.toJson());
 
     connect(reply, &QNetworkReply::finished, this, [=]()
@@ -253,6 +261,66 @@ void AdminModel::deleteSong(int songId)
         else
         {
             emit deleteFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+        }
+        reply->deleteLater(); });
+}
+
+void AdminModel::fetchSongById(int songId)
+{
+    QUrl url(AppConfig::instance().getSongByIdEndpoint(songId));
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QString token = AppState::instance()->getToken();
+    if (token.isEmpty())
+    {
+        emit songFetched(false, "", "", "", "No authentication token available");
+        return;
+    }
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+
+    qDebug() << "AdminModel: Fetching song with ID:" << songId << "from" << url.toString();
+    QNetworkReply *reply = m_networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        QString responseData = QString::fromUtf8(reply->readAll());
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qDebug() << "AdminModel: Fetch song HTTP Status:" << statusCode << "Response:" << responseData;
+
+        if (reply->error() == QNetworkReply::NoError && statusCode == 200)
+        {
+            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            if (!doc.isNull() && doc.isObject())
+            {
+                QJsonObject obj = doc.object();
+                QString title = obj.value("title").toString();
+                QJsonArray genresArray = obj.value("genres").toArray();
+                QStringList genresList;
+                for (const QJsonValue &value : genresArray)
+                {
+                    genresList << value.toString();
+                }
+                QString genres = genresList.join(", ");
+
+                QJsonArray artistsArray = obj.value("artists").toArray();
+                QStringList artistsList;
+                for (const QJsonValue &value : artistsArray)
+                {
+                    artistsList << value.toString();
+                }
+                QString artists = artistsList.join(", ");
+
+                emit songFetched(true, title, genres, artists, "");
+            }
+            else
+            {
+                emit songFetched(false, "", "", "", "Invalid response format from server: " + responseData);
+            }
+        }
+        else
+        {
+            emit songFetched(false, "", "", "", QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
         }
         reply->deleteLater(); });
 }

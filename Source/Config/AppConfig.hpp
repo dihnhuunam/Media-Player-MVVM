@@ -20,6 +20,7 @@ public:
     QString getSongsSearchByGenresEndpoint() const;
     QString getSongsUpdateEndpoint(int songId) const;
     QString getSongsDeleteEndpoint(int songId) const;
+    QString getSongByIdEndpoint(int songId) const;  
     QString getPlaylistsEndpoint() const;
     QString getPlaylistEndpoint(int playlistId) const;
     QString getPlaylistsSongsEndpoint() const;
