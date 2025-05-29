@@ -280,7 +280,7 @@ Item {
                     font.pixelSize: formFieldFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminDashboard.qml");
                         console.log("AdminUploadFile: Back to AdminDashboardView");
                     }
                     contentItem: Text {
