@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "./Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -11,7 +12,7 @@ Item {
     property real formFieldFontSize: 22
     property real formSpacing: 18
     property real formWidth: 385
-    property real formHeight: 650 // Tăng chiều cao để chứa ListView
+    property real formHeight: 650
     property var selectedFilePaths: []
 
     Rectangle {

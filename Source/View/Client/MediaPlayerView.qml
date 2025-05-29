@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtMultimedia
-import "Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -251,7 +252,7 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/PlaylistView.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Client/PlaylistView.qml");
                         console.log("Navigate to PlaylistView");
                     }
                     background: Rectangle {
@@ -406,7 +407,7 @@ Item {
                             color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
-                            NavigationManager.navigateTo("qrc:/Source/View/ProfileView.qml");
+                            NavigationManager.navigateTo("qrc:/Source/View/Client/ProfileView.qml");
                             console.log("View Details Account clicked, navigating to ProfileView");
                         }
                     }
@@ -443,7 +444,7 @@ Item {
                             color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
-                            NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
+                            NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
                             console.log("Logout clicked, navigated to LoginView");
                         }
                     }

@@ -26,15 +26,19 @@
         <file>Source/View/Components/SliderComponent.qml</file>
         <!-- Views -->
         <file>Source/View/Main.qml</file>
-        <file>Source/View/MediaPlayerView.qml</file>
-        <file>Source/View/PlaylistView.qml</file>
-        <file>Source/View/MediaFileView.qml</file>
-        <file>Source/View/LoginView.qml</file>
-        <file>Source/View/RegisterView.qml</file>
-        <file>Source/View/NavigationManager.qml</file>
-        <file>Source/View/ProfileView.qml</file>
-        <file>Source/View/AdminDashboard.qml</file>
-        <file>Source/View/AdminUploadFile.qml</file>
-        <file>Source/View/AdminMediaFilesView.qml</file>
+        <!-- Helper -->
+        <file>Source/View/Helper/NavigationManager.qml</file>
+        <!-- Authentication -->
+        <file>Source/View/Authentication/LoginView.qml</file>
+        <file>Source/View/Authentication/RegisterView.qml</file>
+        <!-- Admin -->
+        <file>Source/View/Admin/AdminDashboard.qml</file>
+        <file>Source/View/Admin/AdminUploadFile.qml</file>
+        <file>Source/View/Admin/AdminMediaFilesView.qml</file>
+        <!-- Client -->
+        <file>Source/View/Client/MediaFileView.qml</file>
+        <file>Source/View/Client/MediaPlayerView.qml</file>
+        <file>Source/View/Client/PlaylistView.qml</file>
+        <file>Source/View/Client/ProfileView.qml</file>
     </qresource>
 </RCC>

@@ -1,7 +1,8 @@
 import QtQuick 6.8
 import QtQuick.Controls 6.8
 import QtQuick.Layouts 6.8
-import "./Components"
+import "../Components"
+import "../Helper"
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
@@ -352,7 +353,7 @@ Item {
                             parent.font.underline = false;
                         }
                         onClicked: {
-                            NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
+                            NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
                             console.log("Navigate to LoginView");
                         }
                     }
@@ -399,7 +400,7 @@ Item {
             notificationPopup.color = success ? "#48bb78" : "#e53e3e";
             notificationPopup.open();
             if (success) {
-                NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
+                NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
             }
         }
     }

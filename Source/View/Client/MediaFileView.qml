@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -275,7 +276,7 @@ Item {
                                             playlistId: AppState.currentPlaylistId
                                         });
                                         songViewModel.playSong(songData.id, songData.title, songData.artists);
-                                        NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                                        NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
                                         console.log("Selected song:", songData.title, "Artists:", songData.artists.join(", "), "Playing and navigated to MediaPlayerView");
                                     }
                                 }

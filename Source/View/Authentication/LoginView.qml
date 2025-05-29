@@ -1,7 +1,8 @@
 import QtQuick 6.8
 import QtQuick.Controls 6.8
 import QtQuick.Layouts 6.8
-import "./Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -185,7 +186,7 @@ Item {
                             parent.font.underline = false;
                         }
                         onClicked: {
-                            NavigationManager.navigateTo("qrc:/Source/View/RegisterView.qml");
+                            NavigationManager.navigateTo("qrc:/Source/View/Authentication/RegisterView.qml");
                             console.log("Navigate to RegisterView");
                         }
                     }
@@ -209,7 +210,7 @@ Item {
                             parent.font.underline = false;
                         }
                         onClicked: {
-                            NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                            NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
                             console.log("Skip clicked");
                         }
                     }
@@ -231,10 +232,10 @@ Item {
                 let userRole = AppState.role;
                 console.log("User role:", userRole);
                 if (userRole === "admin") {
-                    NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                    NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminDashboard.qml");
                     console.log("Navigate to AdminView");
                 } else {
-                    NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                    NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
                     console.log("Navigate to MediaPlayerView");
                 }
                 navigationTimer.start();

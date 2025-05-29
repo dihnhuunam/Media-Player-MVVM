@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     // Register singletons
     engine.addImportPath("qrc:/");
-    qmlRegisterSingletonType(QUrl("qrc:/Source/View/NavigationManager.qml"), "NavigationManager", 1, 0, "NavigationManager");
+    qmlRegisterSingletonType(QUrl("qrc:/Source/View/Helper/NavigationManager.qml"), "NavigationManager", 1, 0, "NavigationManager");
     qmlRegisterSingletonInstance<AppState>("AppState", 1, 0, "AppState", AppState::instance());
 
     // Register AuthViewModel

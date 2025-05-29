@@ -2,7 +2,8 @@ import QtQuick 6.8
 import QtQuick.Controls 6.8
 import QtQuick.Layouts 6.8
 import QtQuick.Dialogs 6.8
-import "./Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {

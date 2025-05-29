@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import "Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -470,7 +471,7 @@ Item {
                 AppState.setState({
                     mediaFiles: songs
                 });
-                NavigationManager.navigateTo("qrc:/Source/View/MediaFileView.qml");
+                NavigationManager.navigateTo("qrc:/Source/View/Client/MediaFileView.qml");
                 console.log("PlaylistView: Navigated to MediaFileView for playlist ID:", playlistId);
             }
 

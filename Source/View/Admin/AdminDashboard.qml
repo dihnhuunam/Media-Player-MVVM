@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "./Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -59,7 +60,7 @@ Item {
                     font.pixelSize: formFieldFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/AdminUploadFile.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminUploadFile.qml");
                         console.log("AdminDashboard: Navigate to AdminUploadFileView");
                     }
                     contentItem: Text {
@@ -95,7 +96,7 @@ Item {
                     font.family: "Arial"
                     onClicked: {
                         songViewModel.fetchAllSongs();
-                        NavigationManager.navigateTo("qrc:/Source/View/AdminMediaFilesView.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminMediaFilesView.qml");
                         console.log("AdminDashboard: Navigate to AdminMediaFilesView");
                     }
                     contentItem: Text {
@@ -131,7 +132,7 @@ Item {
                     font.family: "Arial"
                     onClicked: {
                         AppState.clearUserInfo();
-                        NavigationManager.navigateTo("qrc:/Source/View/LoginView.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
                         console.log("AdminDashboard: Logout clicked, navigated to LoginView");
                     }
                     contentItem: Text {

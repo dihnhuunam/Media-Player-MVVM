@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Window
 import QtQuick.Layouts
 import AppState 1.0
+import "Helper"
 
 ApplicationWindow {
     id: root
@@ -16,7 +17,7 @@ ApplicationWindow {
     Loader {
         id: loader
         anchors.fill: parent
-        source: "qrc:/Source/View/LoginView.qml"
+        source: "qrc:/Source/View/Authentication/LoginView.qml"
         asynchronous: true
         onLoaded: {
             console.log("Main: Loaded view:", source);
@@ -30,10 +31,10 @@ ApplicationWindow {
         if (AppState.isAuthenticated) {
             console.log("Main: User is authenticated, role:", AppState.role);
             if (AppState.role === "admin") {
-                NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminDashboard.qml");
                 console.log("Main: Navigating to AdminView");
             } else {
-                NavigationManager.navigateTo("qrc:/Source/View/MediaPlayerView.qml");
+                NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
                 console.log("Main: Navigating to MediaPlayerView");
             }
         } else {

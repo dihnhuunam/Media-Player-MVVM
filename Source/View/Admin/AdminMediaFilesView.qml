@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "./Components"
+import "../Components"
+import "../Helper"
 import AppState 1.0
 
 Item {
@@ -61,7 +62,7 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/AdminDashboard.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminDashboard.qml");
                         console.log("AdminMediaFiles: Back to AdminDashboardView");
                     }
                     background: Rectangle {
@@ -141,7 +142,7 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        NavigationManager.navigateTo("qrc:/Source/View/AdminUploadFile.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminUploadFile.qml");
                         console.log("AdminMediaFiles: Navigate to AdminUploadFileView");
                     }
                     background: Rectangle {
