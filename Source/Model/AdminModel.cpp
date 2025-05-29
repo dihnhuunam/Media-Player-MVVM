@@ -36,21 +36,37 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
 
     QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
+    // Title part
     QHttpPart titlePart;
     titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"title\""));
     titlePart.setBody(title.toUtf8());
     multiPart->append(titlePart);
 
+    // Genres part (split into array)
     QHttpPart genresPart;
     genresPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"genres\""));
-    genresPart.setBody(genres.toUtf8());
+    QJsonArray genresArray;
+    for (const QString &genre : genres.split(",", Qt::SkipEmptyParts))
+    {
+        genresArray.append(genre.trimmed());
+    }
+    QJsonDocument genresDoc(genresArray);
+    genresPart.setBody(genresDoc.toJson(QJsonDocument::Compact));
     multiPart->append(genresPart);
 
+    // Artists part (split into array)
     QHttpPart artistsPart;
     artistsPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"artists\""));
-    artistsPart.setBody(artists.toUtf8());
+    QJsonArray artistsArray;
+    for (const QString &artist : artists.split(",", Qt::SkipEmptyParts))
+    {
+        artistsArray.append(artist.trimmed());
+    }
+    QJsonDocument artistsDoc(artistsArray);
+    artistsPart.setBody(artistsDoc.toJson(QJsonDocument::Compact));
     multiPart->append(artistsPart);
 
+    // File part
     QFile *file = new QFile(filePath);
     if (!file->exists())
     {
