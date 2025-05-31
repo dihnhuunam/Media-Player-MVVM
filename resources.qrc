@@ -35,6 +35,7 @@
         <file>Source/View/Admin/AdminDashboard.qml</file>
         <file>Source/View/Admin/AdminUploadFile.qml</file>
         <file>Source/View/Admin/AdminMediaFilesView.qml</file>
+        <file>Source/View/Admin/AdminViewUsers.qml</file>
         <!-- Client -->
         <file>Source/View/Client/MediaFileView.qml</file>
         <file>Source/View/Client/MediaPlayerView.qml</file>

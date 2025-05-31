@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QMimeDatabase>
 #include <QDebug>
+#include <QUrlQuery>
 
 AdminModel::AdminModel(QObject *parent)
     : QObject(parent), m_networkManager(new QNetworkAccessManager(this))
@@ -321,6 +322,121 @@ void AdminModel::fetchSongById(int songId)
         else
         {
             emit songFetched(false, "", "", "", QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+        }
+        reply->deleteLater(); });
+}
+
+void AdminModel::fetchAllUsers()
+{
+    QUrl url(AppConfig::instance().getAuthGetUsersEndpoint());
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QString token = AppState::instance()->getToken();
+    if (token.isEmpty())
+    {
+        emit usersFetched(false, QVariantList(), "No authentication token available");
+        return;
+    }
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+
+    qDebug() << "AdminModel: Fetching all users from" << url.toString();
+    QNetworkReply *reply = m_networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        QString responseData = QString::fromUtf8(reply->readAll());
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qDebug() << "AdminModel: Fetch users HTTP Status:" << statusCode << "Response:" << responseData;
+
+        if (reply->error() == QNetworkReply::NoError && statusCode == 200)
+        {
+            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            if (!doc.isNull() && doc.isArray())
+            {
+                QVariantList users;
+                QJsonArray usersArray = doc.array();
+                for (const QJsonValue &value : usersArray)
+                {
+                    QJsonObject obj = value.toObject();
+                    QVariantMap user;
+                    user["id"] = obj.value("id").toInt();
+                    user["email"] = obj.value("email").toString();
+                    user["name"] = obj.value("name").toString();
+                    user["date_of_birth"] = obj.value("date_of_birth").toString();
+                    user["role"] = obj.value("role").toString("user");
+                    user["created_at"] = obj.value("created_at").toString();
+                    users.append(user);
+                }
+                emit usersFetched(true, users, "");
+            }
+            else
+            {
+                emit usersFetched(false, QVariantList(), "Invalid response format from server: " + responseData);
+            }
+        }
+        else
+        {
+            emit usersFetched(false, QVariantList(), QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+        }
+        reply->deleteLater(); });
+}
+
+void AdminModel::searchUsersByName(const QString &name)
+{
+    QUrl url(AppConfig::instance().getAuthSearchUsersByNameEndpoint());
+    QUrlQuery query;
+    query.addQueryItem("name", name);
+    url.setQuery(query);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QString token = AppState::instance()->getToken();
+    if (token.isEmpty())
+    {
+        emit usersFetched(false, QVariantList(), "No authentication token available");
+        return;
+    }
+    request.setRawHeader("Authorization", QString("Bearer %1").arg(token).toUtf8());
+
+    qDebug() << "AdminModel: Searching users with name:" << name << "from" << url.toString();
+    QNetworkReply *reply = m_networkManager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]()
+            {
+        QString responseData = QString::fromUtf8(reply->readAll());
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        qDebug() << "AdminModel: Search users HTTP Status:" << statusCode << "Response:" << responseData;
+
+        if (reply->error() == QNetworkReply::NoError && statusCode == 200)
+        {
+            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            if (!doc.isNull() && doc.isArray())
+            {
+                QVariantList users;
+                QJsonArray usersArray = doc.array();
+                for (const QJsonValue &value : usersArray)
+                {
+                    QJsonObject obj = value.toObject();
+                    QVariantMap user;
+                    user["id"] = obj.value("id").toInt();
+                    user["email"] = obj.value("email").toString();
+                    user["name"] = obj.value("name").toString();
+                    user["date_of_birth"] = obj.value("date_of_birth").toString();
+                    user["role"] = obj.value("role").toString("user");
+                    user["created_at"] = obj.value("created_at").toString();
+                    users.append(user);
+                }
+                emit usersFetched(true, users, "");
+            }
+            else
+            {
+                emit usersFetched(false, QVariantList(), "Invalid response format from server: " + responseData);
+            }
+        }
+        else
+        {
+            emit usersFetched(false, QVariantList(), QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
         }
         reply->deleteLater(); });
 }

@@ -1,3 +1,4 @@
+// AdminDashboard.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -11,7 +12,7 @@ Item {
     property real formFieldFontSize: 22
     property real formSpacing: 18
     property real formWidth: 385
-    property real formHeight: 550
+    property real formHeight: 600
 
     Rectangle {
         anchors.fill: parent
@@ -98,6 +99,42 @@ Item {
                         songViewModel.fetchAllSongs();
                         NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminMediaFilesView.qml");
                         console.log("AdminDashboard: Navigate to AdminMediaFilesView");
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
+                        }
+                    }
+                }
+
+                HoverButton {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: formFieldHeight * scaleFactor
+                    text: "View Users Account"
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
+                    font.pixelSize: formFieldFontSize * scaleFactor
+                    font.family: "Arial"
+                    onClicked: {
+                        adminViewModel.fetchAllUsers(); // Gọi hàm lấy danh sách người dùng
+                        NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminViewUsers.qml");
+                        console.log("AdminDashboard: Navigate to AdminViewUsers");
                     }
                     contentItem: Text {
                         text: parent.text

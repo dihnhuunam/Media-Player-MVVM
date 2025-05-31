@@ -81,6 +81,13 @@ QString AppConfig::getAuthGetUserByIdEndpoint(int userId) const
     return url;
 }
 
+QString AppConfig::getAuthSearchUsersByNameEndpoint() const
+{
+    QString url = envVariables.value("AUTH_SEARCH_USERS_BY_NAME_ENDPOINT", getBaseUrl() + "/api/auth/users/search");
+    qDebug() << "AppConfig: Generated AUTH_SEARCH_USERS_BY_NAME_ENDPOINT:" << url;
+    return url;
+}
+
 QString AppConfig::getSongsEndpoint() const
 {
     QString url = envVariables.value("SONGS_ENDPOINT", getBaseUrl() + "/api/songs");
