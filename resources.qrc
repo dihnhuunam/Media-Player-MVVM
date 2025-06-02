@@ -37,6 +37,7 @@
         <file>Source/View/Admin/AdminMediaFilesView.qml</file>
         <file>Source/View/Admin/AdminViewUsers.qml</file>
         <!-- Client -->
+        <file>Source/View/Client/AddSong.qml</file>
         <file>Source/View/Client/MediaFileView.qml</file>
         <file>Source/View/Client/MediaPlayerView.qml</file>
         <file>Source/View/Client/PlaylistView.qml</file>

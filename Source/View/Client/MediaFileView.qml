@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "../Components"
 import "../Helper"
 import AppState 1.0
@@ -29,33 +28,7 @@ Item {
     property int currentPage: 0
     property int totalPages: Math.ceil(AppState.currentMediaFiles.length / itemsPerPage)
 
-    FileDialog {
-        id: fileDialog
-        title: "Select Music Files"
-        nameFilters: ["Music files (*.mp3 *.wav *.m4a)"]
-        fileMode: FileDialog.OpenFiles
-        onAccepted: {
-            console.log("Selected files:", fileDialog.selectedFiles);
-            let newFiles = [];
-            for (let i = 0; i < fileDialog.selectedFiles.length; i++) {
-                let songId = 0;
-                playlistViewModel.addSongToPlaylist(AppState.currentPlaylistId, songId);
-                newFiles.push({
-                    id: songId,
-                    title: fileDialog.selectedFiles[i].split('/').pop(),
-                    artists: ["Unknown Artist"],
-                    file_path: fileDialog.selectedFiles[i]
-                });
-            }
-            AppState.setState({
-                mediaFiles: newFiles
-            });
-        }
-        onRejected: {
-            console.log("File selection canceled");
-        }
-    }
-
+    // Add the missing getCurrentPageItems function
     function getCurrentPageItems() {
         let startIndex = currentPage * itemsPerPage;
         let endIndex = Math.min(startIndex + itemsPerPage, AppState.currentMediaFiles.length);
@@ -187,8 +160,8 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        fileDialog.open();
-                        console.log("Add song button clicked");
+                        console.log("Add song button clicked, navigating to AddSongView");
+                        NavigationManager.navigateTo("qrc:/Source/View/Client/AddSong.qml");
                     }
                     background: Rectangle {
                         color: parent.hovered ? "#e6e9ec" : "transparent"

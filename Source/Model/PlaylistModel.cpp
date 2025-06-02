@@ -264,7 +264,7 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
         {
             if (endpoint.contains("/playlists") && !endpoint.contains("/songs"))
             {
-                // Xử lý danh sách playlists (bao gồm cả tìm kiếm)
+                // Handle playlists list (including search)
                 QJsonArray jsonArray = doc.array();
                 QList<PlaylistData> playlists;
                 for (const QJsonValue &value : jsonArray)
@@ -280,13 +280,13 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                 }
                 if (endpoint.contains("/search"))
                 {
-                    // Kết quả tìm kiếm playlist
+                    // Playlist search results
                     message = playlists.isEmpty() ? "No playlists found" : "Playlists loaded successfully";
                     emit searchResultsLoaded(playlists, message);
                 }
                 else
                 {
-                    // Danh sách playlist thông thường
+                    // Regular playlist list
                     beginResetModel();
                     m_playlists = playlists;
                     endResetModel();
@@ -296,7 +296,7 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
             }
             else if (endpoint.contains("/songs"))
             {
-                // Xử lý danh sách bài hát trong playlist hoặc kết quả tìm kiếm bài hát
+                // Handle songs in playlist or song search results
                 QJsonArray jsonArray = doc.array();
                 QList<SongData> songs;
                 for (const QJsonValue &value : jsonArray)
@@ -323,18 +323,18 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                     song.genres = genres;
                     songs.append(song);
                 }
-                // Trích xuất playlistId từ URL
+                // Extract playlistId from URL
                 QStringList pathParts = endpoint.split('/');
                 int playlistId = pathParts[pathParts.size() - 2].toInt();
                 if (endpoint.contains("/search"))
                 {
-                    // Kết quả tìm kiếm bài hát trong playlist
+                    // Song search results in playlist
                     message = songs.isEmpty() ? "No songs found" : "Song search results loaded successfully";
                     emit songSearchResultsLoaded(playlistId, songs, message);
                 }
                 else
                 {
-                    // Danh sách bài hát thông thường trong playlist
+                    // Regular songs in playlist
                     message = songs.isEmpty() ? "No songs in this playlist" : "Songs loaded successfully";
                     emit songsLoaded(playlistId, songs, message);
                 }
@@ -378,7 +378,7 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
     }
     else
     {
-        // Xử lý lỗi HTTP cụ thể
+        // Handle specific HTTP errors
         int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
         if (doc.isObject())
@@ -394,6 +394,12 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
             message = message.isEmpty() ? "Forbidden: Insufficient permissions" : message;
         else if (httpStatus == 404)
             message = message.isEmpty() ? "Not found: Resource does not exist" : message;
+        else if (httpStatus == 409)
+            message = message.isEmpty() ? "Song is already in the playlist" : message;
+        else
+            message = message.isEmpty() ? "An error occurred" : message;
+
+        emit errorOccurred(message);
     }
 
     if (!success)

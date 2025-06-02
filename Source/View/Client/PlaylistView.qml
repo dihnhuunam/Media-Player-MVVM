@@ -380,7 +380,115 @@ Item {
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
             width: 200 * scaleFactor
-            height: 100 * scaleFactor
+            height: 120 * scaleFactor
+            modal: true
+            focus: true
+            background: Rectangle {
+                color: "#ffffff"
+                border.color: "#d0d7de"
+                radius: 8
+            }
+
+            property int playlistId: 0
+            property string playlistName: ""
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 10 * scaleFactor
+                spacing: playlistSpacing * scaleFactor
+
+                HoverButton {
+                    Layout.fillWidth: true
+                    text: "Edit"
+                    defaultColor: "#2b6cb0"
+                    hoverColor: "#3182ce"
+                    radius: 12 * scaleFactor
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
+                    onClicked: {
+                        if (AppState.isAuthenticated) {
+                            editPlaylistPopup.playlistId = popup.playlistId;
+                            editPlaylistPopup.playlistName = popup.playlistName;
+                            editPlaylistPopup.open();
+                            popup.close();
+                            console.log("PlaylistView: EditPopup opened for playlist ID:", popup.playlistId);
+                        } else {
+                            notificationPopup.text = "Please login to edit a playlist";
+                            notificationPopup.color = "#e53e3e";
+                            notificationPopup.open();
+                        }
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#3182ce" : "#2b6cb0"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#2c5282" : "#2a4365"
+                            }
+                        }
+                    }
+                }
+
+                HoverButton {
+                    Layout.fillWidth: true
+                    text: "Delete"
+                    defaultColor: "#e53e3e"
+                    hoverColor: "#c53030"
+                    radius: 12 * scaleFactor
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
+                    onClicked: {
+                        if (AppState.isAuthenticated) {
+                            playlistViewModel.deletePlaylist(popup.playlistId);
+                            popup.close();
+                            console.log("PlaylistView: Delete clicked for playlist ID:", popup.playlistId);
+                        } else {
+                            notificationPopup.text = "Please login to delete a playlist";
+                            notificationPopup.color = "#e53e3e";
+                            notificationPopup.open();
+                        }
+                    }
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        font: parent.font
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    background: Rectangle {
+                        radius: parent.radius
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: parent.hovered ? "#c53030" : "#e53e3e"
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: parent.hovered ? "#9b2c2c" : "#c53030"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Popup {
+            id: editPlaylistPopup
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: 300 * scaleFactor
+            height: 150 * scaleFactor
             modal: true
             focus: true
             background: Rectangle {
@@ -396,8 +504,35 @@ Item {
                 anchors.fill: parent
                 spacing: playlistSpacing * scaleFactor
 
+                Text {
+                    text: "Edit Playlist Name"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
+                    color: "#1a202c"
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                TextField {
+                    id: editPlaylistNameField
+                    text: editPlaylistPopup.playlistName
+                    placeholderText: "New playlist name"
+                    placeholderTextColor: "#a0aec0"
+                    color: "#2d3748"
+                    font.pixelSize: playlistItemFontSize * scaleFactor
+                    font.family: "Arial"
+                    Layout.fillWidth: true
+                    Layout.leftMargin: playlistItemMargin * scaleFactor
+                    Layout.rightMargin: playlistItemMargin * scaleFactor
+                    background: Rectangle {
+                        color: "#f6f8fa"
+                        radius: 12
+                        border.color: parent.activeFocus ? "#3182ce" : "#d0d7de"
+                        border.width: parent.activeFocus ? 2 : 1
+                    }
+                }
+
                 HoverButton {
-                    text: "Delete"
+                    text: "Save"
                     Layout.fillWidth: true
                     Layout.leftMargin: playlistItemMargin * scaleFactor
                     Layout.rightMargin: playlistItemMargin * scaleFactor
@@ -407,11 +542,13 @@ Item {
                     font.pixelSize: playlistItemFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
-                        if (AppState.isAuthenticated) {
-                            playlistViewModel.deletePlaylist(popup.playlistId);
-                            popup.close();
+                        var name = editPlaylistNameField.text.trim();
+                        if (name !== "") {
+                            playlistViewModel.updatePlaylist(editPlaylistPopup.playlistId, name);
+                            editPlaylistPopup.close();
+                            editPlaylistNameField.text = "";
                         } else {
-                            notificationPopup.text = "Please login to delete a playlist";
+                            notificationPopup.text = "Playlist name cannot be empty";
                             notificationPopup.color = "#e53e3e";
                             notificationPopup.open();
                         }
