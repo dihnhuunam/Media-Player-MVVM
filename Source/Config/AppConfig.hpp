@@ -9,12 +9,14 @@ public:
     bool loadEnvFile(const QString &filePath);
 
     QString getBaseUrl() const;
+
     QString getAuthLoginEndpoint() const;
     QString getAuthRegisterEndpoint() const;
     QString getAuthUpdateEndpoint(int userId) const;
     QString getAuthGetUsersEndpoint() const;
     QString getAuthGetUserByIdEndpoint(int userId) const;
     QString getAuthSearchUsersByNameEndpoint() const;
+
     QString getSongsEndpoint() const;
     QString getSongsSearchEndpoint() const;
     QString getSongsStreamEndpoint(int songId) const;
@@ -22,6 +24,7 @@ public:
     QString getSongsUpdateEndpoint(int songId) const;
     QString getSongsDeleteEndpoint(int songId) const;
     QString getSongByIdEndpoint(int songId) const;
+    
     QString getPlaylistsEndpoint() const;
     QString getPlaylistEndpoint(int playlistId) const;
     QString getPlaylistsSongsEndpoint() const;
