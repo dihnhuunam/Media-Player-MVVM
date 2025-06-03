@@ -19,7 +19,10 @@ int PlaylistModel::rowCount(const QModelIndex &parent) const
 QVariant PlaylistModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() < 0 || index.row() >= m_playlists.count())
+    {
         return QVariant();
+    }
+
     const PlaylistData &playlist = m_playlists[index.row()];
     switch (role)
     {
@@ -51,7 +54,9 @@ QHash<int, QByteArray> PlaylistModel::roleNames() const
 
 bool PlaylistModel::isAuthenticated() const
 {
-    return !m_settings->value("jwt_token").toString().isEmpty();
+    return !m_settings->value("jwt_token")
+                .toString()
+                .isEmpty();
 }
 
 void PlaylistModel::loadUserPlaylists()
@@ -167,17 +172,24 @@ void PlaylistModel::removeSongFromPlaylist(int playlistId, int songId)
     m_isLoading = true;
     emit isLoadingChanged();
 
-    QUrl url(AppConfig::instance().getPlaylistSongEndpoint(playlistId, songId));
+    QUrl url(AppConfig::instance().getPlaylistsRemoveSongEndpoint());
     QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
     {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
     }
 
-    QNetworkReply *reply = m_networkManager.deleteResource(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]()
-            { handleNetworkReply(reply); });
+    QJsonObject json;
+    json["playlistId"] = playlistId;
+    json["songId"] = songId;
+    QJsonDocument doc(json);
+    QByteArray data = doc.toJson();
+
+    QNetworkReply *reply = m_networkManager.sendCustomRequest(request, "DELETE", data);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, playlistId, songId]()
+            { handleNetworkReply(reply, playlistId, songId); });
 }
 
 void PlaylistModel::loadSongsInPlaylist(int playlistId)
@@ -246,7 +258,7 @@ void PlaylistModel::searchSongsInPlaylist(int playlistId, const QString &query, 
             { handleNetworkReply(reply); });
 }
 
-void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
+void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int songId)
 {
     if (!reply)
         return;
@@ -325,18 +337,18 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                 }
                 // Extract playlistId from URL
                 QStringList pathParts = endpoint.split('/');
-                int playlistId = pathParts[pathParts.size() - 2].toInt();
+                int extractedPlaylistId = pathParts[pathParts.size() - 2].toInt();
                 if (endpoint.contains("/search"))
                 {
                     // Song search results in playlist
                     message = songs.isEmpty() ? "No songs found" : "Song search results loaded successfully";
-                    emit songSearchResultsLoaded(playlistId, songs, message);
+                    emit songSearchResultsLoaded(extractedPlaylistId, songs, message);
                 }
                 else
                 {
                     // Regular songs in playlist
                     message = songs.isEmpty() ? "No songs in this playlist" : "Songs loaded successfully";
-                    emit songsLoaded(playlistId, songs, message);
+                    emit songsLoaded(extractedPlaylistId, songs, message);
                 }
             }
         }
@@ -359,15 +371,23 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply)
                 int playlistId = endpoint.split('/').last().toInt();
                 emit playlistDeleted(playlistId);
             }
-            else if (endpoint.endsWith("/playlists/songs"))
+            else if (endpoint.endsWith("/playlists/songs") && reply->operation() == QNetworkAccessManager::PostOperation)
             {
                 int playlistId = jsonObj["playlistId"].toInt();
                 emit songAdded(playlistId);
             }
-            else if (endpoint.contains("/songs/") && reply->operation() == QNetworkAccessManager::DeleteOperation)
+            else if (endpoint.endsWith("/playlists/songs") && reply->operation() == QNetworkAccessManager::CustomOperation)
             {
-                int playlistId = endpoint.split('/')[endpoint.split('/').size() - 3].toInt();
-                emit songRemoved(playlistId);
+                if (message == "Song removed from playlist successfully")
+                {
+                    // Use the playlistId passed to the function instead of relying on JSON
+                    emit songRemoved(playlistId, songId);
+                }
+                else
+                {
+                    success = false;
+                    message = "Unexpected response: " + message;
+                }
             }
         }
         else

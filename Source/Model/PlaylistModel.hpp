@@ -65,10 +65,10 @@ signals:
     void playlistUpdated(int playlistId);
     void playlistDeleted(int playlistId);
     void songAdded(int playlistId);
-    void songRemoved(int playlistId);
+    void songRemoved(int playlistId, int songId);
 
 private slots:
-    void handleNetworkReply(QNetworkReply *reply);
+    void handleNetworkReply(QNetworkReply *reply, int playlistId = 0, int songId = 0);
 
 private:
     QList<PlaylistData> m_playlists;
@@ -76,4 +76,5 @@ private:
     QSettings *m_settings;
     bool m_isLoading = false;
 };
+
 #endif // PLAYLISTMODEL_H

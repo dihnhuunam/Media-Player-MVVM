@@ -28,7 +28,6 @@ Item {
     property int currentPage: 0
     property int totalPages: Math.ceil(AppState.currentMediaFiles.length / itemsPerPage)
 
-    // Add the missing getCurrentPageItems function
     function getCurrentPageItems() {
         let startIndex = currentPage * itemsPerPage;
         let endIndex = Math.min(startIndex + itemsPerPage, AppState.currentMediaFiles.length);
@@ -264,9 +263,6 @@ Item {
                                     let songTitle = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model.title : modelData.title;
                                     playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, songId);
                                     console.log("Removed song:", songTitle, "from playlist ID:", AppState.currentPlaylistId);
-                                    if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
-                                        songSearchResultsModel.remove(index);
-                                    }
                                 }
                                 background: Rectangle {
                                     color: parent.hovered ? "#e6e9ec" : "transparent"
@@ -416,10 +412,37 @@ Item {
             }
         }
 
-        function onSongRemovedFromPlaylist(playlistId) {
+        function onSongRemovedFromPlaylist(playlistId, songId) {
             if (playlistId === AppState.currentPlaylistId) {
-                playlistViewModel.loadSongsInPlaylist(playlistId);
-                console.log("MediaFileView: Song removed from playlist ID:", playlistId);
+                if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
+                    // Remove from search results
+                    for (var i = 0; i < songSearchResultsModel.count; i++) {
+                        if (songSearchResultsModel.get(i).id === songId) {
+                            songSearchResultsModel.remove(i);
+                            break;
+                        }
+                    }
+                }
+                // Remove from AppState.currentMediaFiles
+                var updatedMediaFiles = [];
+                for (var j = 0; j < AppState.currentMediaFiles.length; j++) {
+                    if (AppState.currentMediaFiles[j].id !== songId) {
+                        updatedMediaFiles.push(AppState.currentMediaFiles[j]);
+                    }
+                }
+                AppState.setState({
+                    mediaFiles: updatedMediaFiles
+                });
+                totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
+                if (currentPage >= totalPages && totalPages > 0) {
+                    currentPage = totalPages - 1;
+                } else if (totalPages === 0) {
+                    currentPage = 0;
+                }
+                // Force immediate update of ListView model
+                mediaFileView.model = null;
+                mediaFileView.model = getCurrentPageItems();
+                console.log("MediaFileView: Song removed from playlist ID:", playlistId, "Song ID:", songId, "Updated song count:", AppState.currentMediaFiles.length);
             }
         }
 

@@ -184,11 +184,10 @@ void PlaylistViewModel::onSongAdded(int playlistId)
     qDebug() << "PlaylistViewModel: Song added to playlist, ID:" << playlistId;
 }
 
-void PlaylistViewModel::onSongRemoved(int playlistId)
+void PlaylistViewModel::onSongRemoved(int playlistId, int songId)
 {
-    emit songRemovedFromPlaylist(playlistId);
-    loadPlaylists();
-    qDebug() << "PlaylistViewModel: Song removed from playlist, ID:" << playlistId;
+    emit songRemovedFromPlaylist(playlistId, songId);
+    qDebug() << "PlaylistViewModel: Song removed from playlist, ID:" << playlistId << "Song ID:" << songId;
 }
 
 void PlaylistViewModel::onSongsLoaded(int playlistId, const QList<SongData> &songs, const QString &message)

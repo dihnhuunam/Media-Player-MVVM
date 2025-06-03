@@ -169,13 +169,6 @@ QString AppConfig::getPlaylistSongsEndpoint(int playlistId) const
     return url;
 }
 
-QString AppConfig::getPlaylistSongEndpoint(int playlistId, int songId) const
-{
-    QString url = getPlaylistSongsEndpoint(playlistId) + "/" + QString::number(songId);
-    qDebug() << "AppConfig: Generated PLAYLIST_SONG_ENDPOINT:" << url;
-    return url;
-}
-
 QString AppConfig::getPlaylistsSearchEndpoint() const
 {
     QString url = envVariables.value("PLAYLISTS_SEARCH_ENDPOINT", getBaseUrl() + "/api/playlists/search");

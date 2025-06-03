@@ -24,12 +24,11 @@ public:
     QString getSongsUpdateEndpoint(int songId) const;
     QString getSongsDeleteEndpoint(int songId) const;
     QString getSongByIdEndpoint(int songId) const;
-    
+
     QString getPlaylistsEndpoint() const;
     QString getPlaylistEndpoint(int playlistId) const;
     QString getPlaylistsSongsEndpoint() const;
     QString getPlaylistSongsEndpoint(int playlistId) const;
-    QString getPlaylistSongEndpoint(int playlistId, int songId) const;
     QString getPlaylistsSearchEndpoint() const;
     QString getPlaylistSongsSearchEndpoint(int playlistId) const;
     QString getPlaylistsCreateEndpoint() const;

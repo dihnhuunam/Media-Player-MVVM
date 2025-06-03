@@ -40,7 +40,7 @@ signals:
     void playlistUpdated(int playlistId);
     void playlistDeleted(int playlistId);
     void songAddedToPlaylist(int playlistId);
-    void songRemovedFromPlaylist(int playlistId);
+    void songRemovedFromPlaylist(int playlistId, int songId);
     void songsLoaded(int playlistId, const QVariantList &songs, const QString &message);
     void searchResultsLoaded(const QVariantList &playlists, const QString &message);
     void songSearchResultsLoaded(int playlistId, const QVariantList &songs, const QString &message);
@@ -53,7 +53,7 @@ private slots:
     void onPlaylistUpdated(int playlistId);
     void onPlaylistDeleted(int playlistId);
     void onSongAdded(int playlistId);
-    void onSongRemoved(int playlistId);
+    void onSongRemoved(int playlistId, int songId);
     void onSongsLoaded(int playlistId, const QList<SongData> &songs, const QString &message);
     void onSearchResultsLoaded(const QList<PlaylistData> &playlists, const QString &message);
     void onSongSearchResultsLoaded(int playlistId, const QList<SongData> &songs, const QString &message);
