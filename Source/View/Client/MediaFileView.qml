@@ -44,7 +44,6 @@ Item {
         let startIndex = currentPage * itemsPerPage;
         let endIndex = Math.min(startIndex + itemsPerPage, files.length);
         console.log("MediaFileView: getCurrentPageItems - startIndex:", startIndex, "endIndex:", endIndex, "total:", files.length);
-        // Convert QVariantList to JavaScript array for slicing
         let jsArray = [];
         for (let i = 0; i < files.length; i++) {
             jsArray.push(files[i]);
@@ -177,10 +176,10 @@ Item {
                     flat: true
                     onClicked: {
                         console.log("Add song button clicked, navigating to AddSongView");
-                        NavigationManager.navigateTo("qrc:/Source/View/Client/AddSong.qml");
+                        NavigationManager.navigateTo("qrc:/Songs/View/Client/AddSong.qml");
                     }
                     background: Rectangle {
-                        color: parent.hovered ? "#e6e9ec" : "transparent"
+                        color: "transparent"
                         radius: 10 * scaleFactor
                     }
                     Image {
@@ -253,8 +252,39 @@ Item {
                                     }
                                     let indexText = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? (index + 1) : (currentPage * itemsPerPage + index + 1);
                                     let title = songData.title || "Unknown Title";
-                                    let artists = Array.isArray(songData.artists) && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist";
-                                    return indexText + ". " + title + " - " + artists;
+                                    let artists = songData.artists || ["Unknown Artist"];
+                                    let artistsText = "Unknown Artist";
+
+                                    // Đồng bộ xử lý artists cho cả search và non-search
+                                    if (typeof artists === "string") {
+                                        // Xử lý trường hợp artists là chuỗi (e.g., "Dangrangto,PUPPY")
+                                        console.log("MediaFileView: Artists is string, splitting:", artists);
+                                        artists = artists.split(",").map(a => a.trim()).filter(a => a.length > 0);
+                                        if (artists.length === 0) {
+                                            artists = ["Unknown Artist"];
+                                        }
+                                    } else if (Array.isArray(artists) || artists instanceof Array) {
+                                        // Xử lý mảng, bao gồm nested arrays
+                                        if (artists.length > 0 && (Array.isArray(artists[0]) || artists[0] instanceof Array)) {
+                                            console.log("MediaFileView: Detected nested artists array, flattening:", JSON.stringify(artists));
+                                            artists = artists[0];
+                                        }
+                                        // Xử lý trường hợp mảng chứa chuỗi đơn (e.g., ["Dangrangto,PUPPY"])
+                                        if (artists.length === 1 && typeof artists[0] === "string" && artists[0].includes(",")) {
+                                            console.log("MediaFileView: Single string array with comma, splitting:", artists[0]);
+                                            artists = artists[0].split(",").map(a => a.trim()).filter(a => a.length > 0);
+                                        }
+                                        if (artists.length === 0) {
+                                            artists = ["Unknown Artist"];
+                                        }
+                                    } else {
+                                        console.log("MediaFileView: Invalid artists type:", typeof artists, JSON.stringify(artists));
+                                        artists = ["Unknown Artist"];
+                                    }
+
+                                    artistsText = artists.join(", ");
+                                    console.log("MediaFileView: Song:", title, "Artists:", artistsText, "Raw artists:", JSON.stringify(artists));
+                                    return indexText + ". " + title + " - " + artistsText;
                                 }
                                 font.pixelSize: mediaItemFontSize * scaleFactor
                                 font.family: "Arial"
@@ -270,19 +300,37 @@ Item {
                                         let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
                                         if (!songData) {
                                             console.log("MediaFileView: Cannot play song, songData is undefined");
-                                            errorText.text = "Cannot play song: Invalid song data";
+                                            errorText.text = "Cannot play song: Invalid data";
                                             errorText.visible = true;
                                             return;
                                         }
+                                        let artists = songData.artists || ["Unknown Artist"];
+                                        // Đồng bộ xử lý artists
+                                        if (typeof artists === "string") {
+                                            console.log("MediaFileView: Artists is string for playback, splitting:", artists);
+                                            artists = artists.split(",").map(a => a.trim()).filter(a => a.length > 0);
+                                            if (artists.length === 0) {
+                                                artists = ["Unknown Artist"];
+                                            }
+                                        } else if (Array.isArray(artists) && artists.length > 0 && (Array.isArray(artists[0]) || artists[0] instanceof Array)) {
+                                            console.log("MediaFileView: Flattening nested artists for playback:", JSON.stringify(artists));
+                                            artists = artists[0];
+                                        } else if (Array.isArray(artists) && artists.length === 1 && typeof artists[0] === "string" && artists[0].includes(",")) {
+                                            console.log("MediaFileView: Single string array with comma for playback, splitting:", artists[0]);
+                                            artists = artists[0].split(",").map(a => a.trim()).filter(a => a.length > 0);
+                                        } else if (!Array.isArray(artists)) {
+                                            console.log("MediaFileView: Invalid artists type for playback:", typeof artists, JSON.stringify(artists));
+                                            artists = ["Unknown Artist"];
+                                        }
                                         AppState.setState({
                                             title: songData.title || "Unknown Title",
-                                            artist: Array.isArray(songData.artists) && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist",
+                                            artist: artists.length > 0 ? artists.join(", ") : "Unknown Artist",
                                             filePath: songData.file_path || "",
                                             playlistId: AppState.currentPlaylistId
                                         });
-                                        songViewModel.playSong(songData.id, songData.title || "Unknown Title", Array.isArray(songData.artists) ? songData.artists : ["Unknown Artist"]);
-                                        NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
-                                        console.log("Selected song:", songData.title || "Unknown Title", "Artists:", Array.isArray(songData.artists) ? songData.artists.join(", ") : "Unknown Artist", "Playing and navigated to MediaPlayerView");
+                                        songViewModel.playSong(songData.id, songData.title || "Unknown Title", artists);
+                                        NavigationManager.navigateTo("qrc:/Songs/View/Client/MediaPlayerView.qml");
+                                        console.log("Selected song:", songData.title || "Unknown Title", "Artists:", artists.join(", "), "Playing and navigated to MediaPlayerView");
                                     }
                                 }
                             }
@@ -295,7 +343,7 @@ Item {
                                     let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
                                     if (!songData) {
                                         console.log("MediaFileView: Cannot remove song, songData is undefined");
-                                        errorText.text = "Cannot remove song: Invalid song data";
+                                        errorText.text = "Cannot remove song: Invalid data";
                                         errorText.visible = true;
                                         return;
                                     }
@@ -354,7 +402,6 @@ Item {
                             duration: 200
                         }
                     }
-
                     Behavior on height {
                         NumberAnimation {
                             duration: 200
@@ -460,6 +507,7 @@ Item {
         function onSongsLoaded(playlistId, songs, message) {
             if (playlistId === AppState.currentPlaylistId) {
                 console.log("MediaFileView: Loading songs for playlist ID:", playlistId, "Song count:", songs.length, "Message:", message);
+                console.log("MediaFileView: Songs data:", JSON.stringify(songs));
                 AppState.setState({
                     mediaFiles: songs,
                     playlistName: AppState.currentPlaylistName
@@ -515,18 +563,47 @@ Item {
         function onSongSearchResultsLoaded(playlistId, songs, message) {
             if (playlistId === AppState.currentPlaylistId) {
                 console.log("MediaFileView: Song search results loaded for playlist ID:", playlistId, "Count:", songs.length, "Message:", message);
+                console.log("MediaFileView: Search songs data:", JSON.stringify(songs));
                 songSearchResultsModel.clear();
                 for (var i = 0; i < songs.length; i++) {
+                    let artists = songs[i].artists || ["Unknown Artist"];
+                    // Đồng bộ xử lý artists giống non-search mode
+                    if (typeof artists === "string") {
+                        // Xử lý trường hợp artists là chuỗi (e.g., "Dangrangto,PUPPY")
+                        console.log("MediaFileView: Search artists is string, splitting:", artists);
+                        artists = artists.split(",").map(a => a.trim()).filter(a => a.length > 0);
+                        if (artists.length === 0) {
+                            artists = ["Unknown Artist"];
+                        }
+                    } else if (Array.isArray(artists) || artists instanceof Array) {
+                        // Xử lý mảng, bao gồm nested arrays và chuỗi đơn
+                        if (artists.length > 0 && (Array.isArray(artists[0]) || artists[0] instanceof Array)) {
+                            console.log("MediaFileView: Search flattening nested artists array:", JSON.stringify(artists));
+                            artists = artists[0];
+                        }
+                        if (artists.length === 1 && typeof artists[0] === "string" && artists[0].includes(",")) {
+                            console.log("MediaFileView: Search single string array with comma, splitting:", artists[0]);
+                            artists = artists[0].split(",").map(a => a.trim()).filter(a => a.length > 0);
+                        }
+                        if (artists.length === 0) {
+                            artists = ["Unknown Artist"];
+                        }
+                    } else {
+                        console.log("MediaFileView: Search invalid artists type, converting:", typeof artists, JSON.stringify(artists));
+                        artists = ["Unknown Artist"];
+                    }
+                    console.log("MediaFileView: Appending song", songs[i].title, "with artists:", JSON.stringify(artists));
                     songSearchResultsModel.append({
                         id: songs[i].id || 0,
                         title: songs[i].title || "Unknown Title",
-                        artists: Array.isArray(songs[i].artists) && songs[i].artists.length > 0 ? songs[i].artists : ["Unknown Artist"],
+                        artists: artists,
                         file_path: songs[i].file_path || "",
                         genres: Array.isArray(songs[i].genres) ? songs[i].genres : []
                     });
                 }
                 mediaFileView.model = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? songSearchResultsModel : getCurrentPageItems();
                 errorText.visible = false;
+                console.log("MediaFileView: Updated songSearchResultsModel, count:", songSearchResultsModel.count);
             }
         }
 
@@ -555,6 +632,7 @@ Item {
 
     Component.onCompleted: {
         console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles && typeof AppState.currentMediaFiles.length === 'number' ? AppState.currentMediaFiles.length : 0, "Playlist ID:", AppState.currentPlaylistId);
+        console.log("MediaFileView: Initial currentMediaFiles:", JSON.stringify(AppState.currentMediaFiles));
         if (AppState.currentPlaylistId !== -1 && (!AppState.currentMediaFiles || typeof AppState.currentMediaFiles.length !== 'number' || AppState.currentMediaFiles.length === 0)) {
             playlistViewModel.loadSongsInPlaylist(AppState.currentPlaylistId);
         }
