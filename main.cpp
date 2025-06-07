@@ -6,6 +6,7 @@
 #include "PlaylistViewModel.hpp"
 #include "AppState.hpp"
 #include "AdminViewModel.hpp"
+#include "UartViewModel.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -33,8 +34,18 @@ int main(int argc, char *argv[])
     AdminViewModel adminViewModel;
     engine.rootContext()->setContextProperty("adminViewModel", &adminViewModel);
 
+    // Register UartViewModel and link with SongViewModel
+    UartViewModel uartViewModel(&songViewModel);
+    engine.rootContext()->setContextProperty("uartViewModel", &uartViewModel);
+
+    // Start UART communication
+    uartViewModel.startUart("/dev/ttyACM0");
+
     const QUrl url("qrc:/Source/View/Main.qml");
     engine.load(url);
+
+    if (engine.rootObjects().isEmpty())
+        return -1;
 
     return app.exec();
 }

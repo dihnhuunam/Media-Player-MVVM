@@ -2,10 +2,15 @@
 #include <QDebug>
 
 UartModel::UartModel(QObject *parent)
-    : QObject(parent), m_serialPort(new QSerialPort(this)), m_errorMessage("")
+    : QObject(parent),
+      m_serialPort(new QSerialPort(this)),
+      m_bufferTimer(this)
 {
-    connect(m_serialPort, &QSerialPort::readyRead, this, &UartModel::handleSerialData);
+    m_validCommands = {"play_pause", "next", "prev"};
+    m_bufferTimer.setSingleShot(true);
+    connect(m_serialPort, &QSerialPort::readyRead, this, &UartModel::handleReadyRead);
     connect(m_serialPort, &QSerialPort::errorOccurred, this, &UartModel::handleSerialError);
+    connect(&m_bufferTimer, &QTimer::timeout, this, &UartModel::processBufferedData);
 }
 
 UartModel::~UartModel()
@@ -13,11 +18,11 @@ UartModel::~UartModel()
     disconnectSerialPort();
 }
 
-void UartModel::connectToSerialPort(const QString &portName)
+bool UartModel::connectToSerialPort(const QString &portName)
 {
     if (m_serialPort->isOpen())
     {
-        disconnectSerialPort();
+        m_serialPort->close();
     }
 
     m_serialPort->setPortName(portName);
@@ -27,18 +32,19 @@ void UartModel::connectToSerialPort(const QString &portName)
     m_serialPort->setStopBits(QSerialPort::OneStop);
     m_serialPort->setFlowControl(QSerialPort::NoFlowControl);
 
-    if (m_serialPort->open(QIODevice::ReadOnly))
+    if (!m_serialPort->open(QIODevice::ReadOnly))
     {
-        m_errorMessage = "";
-        emit isConnectedChanged();
-        qDebug() << "UartModel: Connected to" << portName;
-    }
-    else
-    {
-        m_errorMessage = m_serialPort->errorString();
+        m_errorMessage = tr("Failed to open port %1: %2")
+                             .arg(portName)
+                             .arg(m_serialPort->errorString());
         emit errorMessageChanged();
-        qDebug() << "UartModel: Failed to connect to" << portName << ":" << m_errorMessage;
+        qDebug() << "UartModel: Failed to open port" << portName << ":" << m_errorMessage;
+        return false;
     }
+
+    qDebug() << "UartModel: Started listening on port" << portName;
+    emit isConnectedChanged();
+    return true;
 }
 
 void UartModel::disconnectSerialPort()
@@ -46,62 +52,86 @@ void UartModel::disconnectSerialPort()
     if (m_serialPort->isOpen())
     {
         m_serialPort->close();
-        m_errorMessage = "";
+        qDebug() << "UartModel: Stopped listening on port" << m_serialPort->portName();
         emit isConnectedChanged();
-        qDebug() << "UartModel: Disconnected from serial port";
     }
 }
 
-void UartModel::handleSerialData()
+void UartModel::handleReadyRead()
 {
     m_buffer.append(m_serialPort->readAll());
-
-    // Process complete lines (terminated by \n\r)
-    while (m_buffer.contains("\n\r"))
+    if (!m_bufferTimer.isActive())
     {
-        int endIndex = m_buffer.indexOf("\n\r");
-        QString line = QString(m_buffer.left(endIndex)).trimmed();
-        m_buffer = m_buffer.mid(endIndex + 2); // Remove processed line
+        m_bufferTimer.start(50); // Đợi 50ms để tích lũy dữ liệu
+    }
+}
 
-        qDebug() << "UartModel: Received line:" << line;
+void UartModel::processBufferedData()
+{
+    if (m_buffer.isEmpty())
+    {
+        return;
+    }
 
-        if (line == "play_pause")
-        {
-            emit playPauseRequested();
-        }
-        else if (line == "next")
-        {
-            emit nextSongRequested();
-        }
-        else if (line == "prev")
-        {
-            emit previousSongRequested();
-        }
-        else
-        {
-            bool ok;
-            int volume = line.toInt(&ok);
-            if (ok && volume >= 0 && volume <= 100)
-            {
-                emit volumeChanged(volume);
-            }
-            else
-            {
-                m_errorMessage = "Invalid UART command or volume: " + line;
-                emit errorMessageChanged();
-                qDebug() << m_errorMessage;
-            }
-        }
+    QString command = QString::fromUtf8(m_buffer).trimmed();
+    m_buffer.clear();
+
+    if (!command.isEmpty())
+    {
+        processCommand(command);
     }
 }
 
 void UartModel::handleSerialError(QSerialPort::SerialPortError error)
 {
-    if (error != QSerialPort::NoError && m_serialPort->isOpen())
+    if (error == QSerialPort::NoError)
     {
-        m_errorMessage = m_serialPort->errorString();
-        emit errorMessageChanged();
-        qDebug() << "UartModel: Serial error:" << m_errorMessage;
-        disconnectSerialPort();
+        return;
+    }
+
+    m_errorMessage = tr("Serial port error: %1").arg(m_serialPort->errorString());
+    emit errorMessageChanged();
+    qDebug() << "UartModel: Serial error:" << m_errorMessage;
+}
+
+void UartModel::processCommand(const QString &command)
+{
+    if (command.isEmpty())
+    {
+        return;
+    }
+
+    // Xử lý giá trị âm lượng
+    bool ok;
+    int volume = command.toInt(&ok);
+    if (ok && volume >= 0 && volume <= 100)
+    {
+        emit volumeChanged(volume);
+        qDebug() << "UartModel: Valid volume processed:" << volume;
+        return;
+    }
+
+    // Xử lý các lệnh điều khiển
+    if (m_validCommands.contains(command))
+    {
+        if (command == "play_pause")
+        {
+            emit playPauseRequested();
+            qDebug() << "UartModel: Play/Pause command processed";
+        }
+        else if (command == "next")
+        {
+            emit nextSongRequested();
+            qDebug() << "UartModel: Next song command processed";
+        }
+        else if (command == "prev")
+        {
+            emit previousSongRequested();
+            qDebug() << "UartModel: Previous song command processed";
+        }
+    }
+    else
+    {
+        qDebug() << "UartModel: Invalid command received:" << command;
     }
 }

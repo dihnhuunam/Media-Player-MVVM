@@ -44,14 +44,24 @@ void UartViewModel::onPlayPauseRequested()
 
 void UartViewModel::onNextSongRequested()
 {
-    qDebug() << "UartViewModel: Next song requested";
-    emit nextSongRequested();
+    {
+        if (m_songViewModel)
+        {
+            m_songViewModel->nextSong();
+            qDebug() << "UartViewModel: Next song requested";
+            emit nextSongRequested();
+        }
+    }
 }
 
 void UartViewModel::onPreviousSongRequested()
 {
-    qDebug() << "UartViewModel: Previous song requested";
-    emit previousSongRequested();
+    if (m_songViewModel)
+    {
+        m_songViewModel->previousSong();
+        qDebug() << "UartViewModel: Previous song requested";
+        emit previousSongRequested();
+    }
 }
 
 void UartViewModel::onVolumeChanged(int volume)

@@ -3,7 +3,7 @@ add_library(lModel SHARED
     SongModel.cpp
     PlaylistModel.cpp
     AdminModel.cpp
-    # UartModel.cpp
+    UartModel.cpp
 )
 
 target_include_directories(lModel PUBLIC
