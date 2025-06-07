@@ -26,12 +26,30 @@ Item {
 
     property int itemsPerPage: 25
     property int currentPage: 0
-    property int totalPages: Math.ceil(AppState.currentMediaFiles.length / itemsPerPage)
+    property int totalPages: {
+        let files = AppState.currentMediaFiles;
+        return Math.ceil((files && typeof files.length === 'number' ? files.length : 0) / itemsPerPage);
+    }
 
     function getCurrentPageItems() {
+        let files = AppState.currentMediaFiles;
+        if (!files || typeof files.length !== 'number') {
+            console.log("MediaFileView: currentMediaFiles is invalid or not array-like:", files);
+            return [];
+        }
+        if (files.length === 0) {
+            console.log("MediaFileView: currentMediaFiles is empty");
+            return [];
+        }
         let startIndex = currentPage * itemsPerPage;
-        let endIndex = Math.min(startIndex + itemsPerPage, AppState.currentMediaFiles.length);
-        return AppState.currentMediaFiles.slice(startIndex, endIndex);
+        let endIndex = Math.min(startIndex + itemsPerPage, files.length);
+        console.log("MediaFileView: getCurrentPageItems - startIndex:", startIndex, "endIndex:", endIndex, "total:", files.length);
+        // Convert QVariantList to JavaScript array for slicing
+        let jsArray = [];
+        for (let i = 0; i < files.length; i++) {
+            jsArray.push(files[i]);
+        }
+        return jsArray.slice(startIndex, endIndex);
     }
 
     Timer {
@@ -40,16 +58,11 @@ Item {
         repeat: false
         onTriggered: {
             console.log("Search query:", searchInput.text, "Playlist ID:", AppState.currentPlaylistId);
-            if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
-                if (AppState.currentPlaylistId !== -1) {
-                    playlistViewModel.searchSongsInPlaylist(AppState.currentPlaylistId, searchInput.text);
-                } else {
-                    console.log("Error: Invalid playlist ID");
-                    errorText.text = "Invalid playlist ID";
-                    errorText.visible = true;
-                }
+            if (searchInput.text !== "Search Songs" && searchInput.text !== "" && AppState.currentPlaylistId !== -1) {
+                playlistViewModel.searchSongsInPlaylist(AppState.currentPlaylistId, searchInput.text);
             } else {
                 songSearchResultsModel.clear();
+                mediaFileView.model = getCurrentPageItems();
                 errorText.visible = false;
             }
         }
@@ -234,9 +247,13 @@ Item {
                             Text {
                                 text: {
                                     let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
+                                    if (!songData) {
+                                        console.log("MediaFileView: songData is undefined, index:", index);
+                                        return (index + 1) + ". Unknown Title - Unknown Artist";
+                                    }
                                     let indexText = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? (index + 1) : (currentPage * itemsPerPage + index + 1);
                                     let title = songData.title || "Unknown Title";
-                                    let artists = songData.artists && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist";
+                                    let artists = Array.isArray(songData.artists) && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist";
                                     return indexText + ". " + title + " - " + artists;
                                 }
                                 font.pixelSize: mediaItemFontSize * scaleFactor
@@ -251,15 +268,21 @@ Item {
                                     hoverEnabled: true
                                     onClicked: {
                                         let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
+                                        if (!songData) {
+                                            console.log("MediaFileView: Cannot play song, songData is undefined");
+                                            errorText.text = "Cannot play song: Invalid song data";
+                                            errorText.visible = true;
+                                            return;
+                                        }
                                         AppState.setState({
                                             title: songData.title || "Unknown Title",
-                                            artist: songData.artists && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist",
+                                            artist: Array.isArray(songData.artists) && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist",
                                             filePath: songData.file_path || "",
                                             playlistId: AppState.currentPlaylistId
                                         });
-                                        songViewModel.playSong(songData.id, songData.title || "Unknown Title", songData.artists || ["Unknown Artist"]);
+                                        songViewModel.playSong(songData.id, songData.title || "Unknown Title", Array.isArray(songData.artists) ? songData.artists : ["Unknown Artist"]);
                                         NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
-                                        console.log("Selected song:", songData.title || "Unknown Title", "Artists:", songData.artists ? songData.artists.join(", ") : "Unknown Artist", "Playing and navigated to MediaPlayerView");
+                                        console.log("Selected song:", songData.title || "Unknown Title", "Artists:", Array.isArray(songData.artists) ? songData.artists.join(", ") : "Unknown Artist", "Playing and navigated to MediaPlayerView");
                                     }
                                 }
                             }
@@ -270,6 +293,12 @@ Item {
                                 flat: true
                                 onClicked: {
                                     let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
+                                    if (!songData) {
+                                        console.log("MediaFileView: Cannot remove song, songData is undefined");
+                                        errorText.text = "Cannot remove song: Invalid song data";
+                                        errorText.visible = true;
+                                        return;
+                                    }
                                     playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, songData.id);
                                     console.log("Removed song:", songData.title || "Unknown Title", "from playlist ID:", AppState.currentPlaylistId);
                                 }
@@ -336,7 +365,10 @@ Item {
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 20 * scaleFactor
-                    visible: AppState.currentMediaFiles.length > 0 && (searchInput.text === "Search Songs" || searchInput.text === "")
+                    visible: {
+                        let files = AppState.currentMediaFiles;
+                        return files && typeof files.length === 'number' && files.length > 0 && (searchInput.text === "Search Songs" || searchInput.text === "");
+                    }
 
                     HoverButton {
                         text: "Previous"
@@ -427,10 +459,13 @@ Item {
         target: playlistViewModel
         function onSongsLoaded(playlistId, songs, message) {
             if (playlistId === AppState.currentPlaylistId) {
+                console.log("MediaFileView: Loading songs for playlist ID:", playlistId, "Song count:", songs.length, "Message:", message);
                 AppState.setState({
-                    mediaFiles: songs
+                    mediaFiles: songs,
+                    playlistName: AppState.currentPlaylistName
                 });
-                totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
+                console.log("MediaFileView: currentMediaFiles structure:", JSON.stringify(AppState.currentMediaFiles));
+                totalPages = Math.ceil((AppState.currentMediaFiles && typeof AppState.currentMediaFiles.length === 'number' ? AppState.currentMediaFiles.length : 0) / itemsPerPage);
                 currentPage = 0;
                 mediaFileView.model = getCurrentPageItems();
                 errorText.visible = false;
@@ -455,22 +490,23 @@ Item {
                         }
                     }
                 }
-                var updatedMediaFiles = [];
-                for (var j = 0; j < AppState.currentMediaFiles.length; j++) {
-                    if (AppState.currentMediaFiles[j].id !== songId) {
-                        updatedMediaFiles.push(AppState.currentMediaFiles[j]);
+                let files = AppState.currentMediaFiles;
+                let updatedMediaFiles = [];
+                for (let j = 0; j < files.length; j++) {
+                    if (files[j].id !== songId) {
+                        updatedMediaFiles.push(files[j]);
                     }
                 }
                 AppState.setState({
                     mediaFiles: updatedMediaFiles
                 });
-                totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
+                console.log("MediaFileView: Updated currentMediaFiles structure:", JSON.stringify(AppState.currentMediaFiles));
+                totalPages = Math.ceil((AppState.currentMediaFiles && typeof AppState.currentMediaFiles.length === 'number' ? AppState.currentMediaFiles.length : 0) / itemsPerPage);
                 if (currentPage >= totalPages && totalPages > 0) {
                     currentPage = totalPages - 1;
                 } else if (totalPages === 0) {
                     currentPage = 0;
                 }
-                mediaFileView.model = null;
                 mediaFileView.model = getCurrentPageItems();
                 console.log("MediaFileView: Song removed from playlist ID:", playlistId, "Song ID:", songId, "Updated song count:", AppState.currentMediaFiles.length);
             }
@@ -482,13 +518,13 @@ Item {
                 songSearchResultsModel.clear();
                 for (var i = 0; i < songs.length; i++) {
                     songSearchResultsModel.append({
-                        id: songs[i].id,
+                        id: songs[i].id || 0,
                         title: songs[i].title || "Unknown Title",
-                        artists: songs[i].artists && songs[i].artists.length > 0 ? songs[i].artists : ["Unknown Artist"],
-                        file_path: songs[i].file_path || ""
+                        artists: Array.isArray(songs[i].artists) && songs[i].artists.length > 0 ? songs[i].artists : ["Unknown Artist"],
+                        file_path: songs[i].file_path || "",
+                        genres: Array.isArray(songs[i].genres) ? songs[i].genres : []
                     });
                 }
-                mediaFileView.model = null;
                 mediaFileView.model = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? songSearchResultsModel : getCurrentPageItems();
                 errorText.visible = false;
             }
@@ -510,9 +546,16 @@ Item {
         }
     }
 
+    Binding {
+        target: mediaFileView
+        property: "model"
+        value: searchInput.text !== "Search Songs" && searchInput.text !== "" ? songSearchResultsModel : getCurrentPageItems()
+        when: AppState.currentMediaFilesChanged || searchInput.textChanged
+    }
+
     Component.onCompleted: {
-        console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles.length, "Playlist ID:", AppState.currentPlaylistId);
-        if (AppState.currentPlaylistId !== -1) {
+        console.log("MediaFileView: Component completed, initial song count:", AppState.currentMediaFiles && typeof AppState.currentMediaFiles.length === 'number' ? AppState.currentMediaFiles.length : 0, "Playlist ID:", AppState.currentPlaylistId);
+        if (AppState.currentPlaylistId !== -1 && (!AppState.currentMediaFiles || typeof AppState.currentMediaFiles.length !== 'number' || AppState.currentMediaFiles.length === 0)) {
             playlistViewModel.loadSongsInPlaylist(AppState.currentPlaylistId);
         }
     }
