@@ -4,9 +4,70 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QUrlQuery>
+#include <QDebug>
+
+PageSongModel::PageSongModel(QObject *parent) : QAbstractListModel(parent) {}
+
+int PageSongModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return m_songs.count();
+}
+
+QVariant PageSongModel::data(const QModelIndex &index, int role) const
+{
+    if (index.row() < 0 || index.row() >= m_songs.count())
+        return QVariant();
+
+    const SongData &song = m_songs[index.row()];
+    switch (role)
+    {
+    case IdRole:
+        return song.id;
+    case TitleRole:
+        return song.title;
+    case ArtistsRole:
+        return song.artists;
+    case FilePathRole:
+        return song.filePath;
+    case GenresRole:
+        return song.genres;
+    default:
+        return QVariant();
+    }
+}
+
+QHash<int, QByteArray> PageSongModel::roleNames() const
+{
+    QHash<int, QByteArray> roles;
+    roles[IdRole] = "id";
+    roles[TitleRole] = "title";
+    roles[ArtistsRole] = "artists";
+    roles[FilePathRole] = "file_path";
+    roles[GenresRole] = "genres";
+    return roles;
+}
+
+void PageSongModel::setSongs(const QList<SongData> &songs)
+{
+    beginResetModel();
+    m_songs = songs;
+    endResetModel();
+}
+
+void PageSongModel::clear()
+{
+    beginResetModel();
+    m_songs.clear();
+    endResetModel();
+}
 
 PlaylistModel::PlaylistModel(QObject *parent)
-    : QAbstractListModel(parent), m_networkManager(), m_settings(new QSettings("MediaPlayer", "Auth", this))
+    : QAbstractListModel(parent),
+      m_networkManager(),
+      m_settings(new QSettings("MediaPlayer", "Auth", this)),
+      m_pageSongModel(new PageSongModel(this)),
+      m_searchSongModel(new PageSongModel(this))
 {
 }
 
@@ -19,9 +80,7 @@ int PlaylistModel::rowCount(const QModelIndex &parent) const
 QVariant PlaylistModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() < 0 || index.row() >= m_playlists.count())
-    {
         return QVariant();
-    }
 
     const PlaylistData &playlist = m_playlists[index.row()];
     switch (role)
@@ -57,6 +116,50 @@ bool PlaylistModel::isAuthenticated() const
     return !m_settings->value("jwt_token").toString().isEmpty();
 }
 
+void PlaylistModel::setCurrentPage(int page)
+{
+    if (page < 0 || page >= m_totalPages)
+        return;
+    if (m_currentPage != page)
+    {
+        m_currentPage = page;
+        updatePageSongs();
+        emit currentPageChanged();
+        qDebug() << "PlaylistModel: Set current page to" << page;
+    }
+}
+
+void PlaylistModel::setItemsPerPage(int items)
+{
+    if (items <= 0)
+        return;
+    if (m_itemsPerPage != items)
+    {
+        m_itemsPerPage = items;
+        m_totalPages = m_currentSongs.count() > 0 ? (m_currentSongs.count() + m_itemsPerPage - 1) / m_itemsPerPage : 0;
+        if (m_currentPage >= m_totalPages && m_totalPages > 0)
+            m_currentPage = m_totalPages - 1;
+        else if (m_totalPages == 0)
+            m_currentPage = 0;
+        updatePageSongs();
+        emit itemsPerPageChanged();
+        emit totalPagesChanged();
+        emit currentPageChanged();
+        qDebug() << "PlaylistModel: Set items per page to" << items << ", total pages:" << m_totalPages;
+    }
+}
+
+void PlaylistModel::updatePageSongs()
+{
+    int startIndex = m_currentPage * m_itemsPerPage;
+    int endIndex = qMin(startIndex + m_itemsPerPage, m_currentSongs.count());
+    QList<SongData> pageSongs;
+    for (int i = startIndex; i < endIndex; ++i)
+        pageSongs.append(m_currentSongs[i]);
+    m_pageSongModel->setSongs(pageSongs);
+    qDebug() << "PlaylistModel: Updated page songs, count:" << pageSongs.count() << ", startIndex:" << startIndex << ", endIndex:" << endIndex;
+}
+
 void PlaylistModel::loadUserPlaylists()
 {
     m_isLoading = true;
@@ -66,9 +169,7 @@ void PlaylistModel::loadUserPlaylists()
     QNetworkRequest request(url);
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
     QNetworkReply *reply = m_networkManager.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
             { handleNetworkReply(reply); });
@@ -84,9 +185,7 @@ void PlaylistModel::createPlaylist(const QString &name)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QJsonObject json;
     json["name"] = name;
@@ -108,9 +207,7 @@ void PlaylistModel::updatePlaylist(int playlistId, const QString &name)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QJsonObject json;
     json["name"] = name;
@@ -131,9 +228,7 @@ void PlaylistModel::deletePlaylist(int playlistId)
     QNetworkRequest request(url);
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QNetworkReply *reply = m_networkManager.deleteResource(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
@@ -150,9 +245,7 @@ void PlaylistModel::addSongToPlaylist(int playlistId, int songId)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QJsonObject json;
     json["playlistId"] = playlistId;
@@ -175,9 +268,7 @@ void PlaylistModel::removeSongFromPlaylist(int playlistId, int songId)
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QJsonObject json;
     json["playlistId"] = playlistId;
@@ -199,9 +290,7 @@ void PlaylistModel::loadSongsInPlaylist(int playlistId)
     QNetworkRequest request(url);
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QNetworkReply *reply = m_networkManager.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply, playlistId]()
@@ -223,9 +312,7 @@ void PlaylistModel::search(const QString &query, int limit, int offset)
     QNetworkRequest request(url);
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QNetworkReply *reply = m_networkManager.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply]()
@@ -247,9 +334,7 @@ void PlaylistModel::searchSongsInPlaylist(int playlistId, const QString &query, 
     QNetworkRequest request(url);
     QString token = m_settings->value("jwt_token").toString();
     if (!token.isEmpty())
-    {
         request.setRawHeader("Authorization", "Bearer " + token.toUtf8());
-    }
 
     QNetworkReply *reply = m_networkManager.get(request);
     connect(reply, &QNetworkReply::finished, this, [this, reply, playlistId]()
@@ -274,7 +359,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
         {
             if (endpoint.contains("/playlists") && !endpoint.contains("/songs"))
             {
-                // Handle playlists list (including search)
                 QJsonArray jsonArray = doc.array();
                 QList<PlaylistData> playlists;
                 for (const QJsonValue &value : jsonArray)
@@ -290,13 +374,11 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                 }
                 if (endpoint.contains("/search"))
                 {
-                    // Playlist search results
                     message = playlists.isEmpty() ? "No playlists found" : "Playlists loaded successfully";
                     emit searchResultsLoaded(playlists, message);
                 }
                 else
                 {
-                    // Regular playlist list
                     beginResetModel();
                     m_playlists = playlists;
                     endResetModel();
@@ -306,7 +388,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
             }
             else if (endpoint.contains("/songs"))
             {
-                // Handle songs in playlist or song search results
                 QJsonArray jsonArray = doc.array();
                 QList<SongData> songs;
                 for (const QJsonValue &value : jsonArray)
@@ -318,15 +399,21 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                     if (song.title.isEmpty())
                         song.title = "Unknown Title";
 
-                    // Handle artists safely
-                    QJsonArray artistsArray = obj["artists"].toArray();
+                    QJsonValue artistsValue = obj["artists"];
                     QStringList artists;
-                    if (artistsArray.isEmpty() || !obj.contains("artists"))
-                        artists.append("Unknown Artist");
-                    else
+                    if (artistsValue.isArray())
+                    {
+                        QJsonArray artistsArray = artistsValue.toArray();
                         for (const QJsonValue &artist : artistsArray)
                             if (!artist.toString().trimmed().isEmpty())
                                 artists.append(artist.toString().trimmed());
+                    }
+                    else if (artistsValue.isString())
+                    {
+                        QString artistsStr = artistsValue.toString().trimmed();
+                        if (!artistsStr.isEmpty())
+                            artists = artistsStr.split(",", Qt::SkipEmptyParts);
+                    }
                     if (artists.isEmpty())
                         artists.append("Unknown Artist");
                     song.artists = artists;
@@ -335,7 +422,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                     if (song.filePath.isEmpty())
                         song.filePath = "";
 
-                    // Handle genres safely
                     QJsonArray genresArray = obj["genres"].toArray();
                     QStringList genres;
                     if (!genresArray.isEmpty())
@@ -346,19 +432,25 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
 
                     songs.append(song);
                 }
-                // Use provided playlistId instead of extracting from URL
-                int effectivePlaylistId = playlistId;
                 if (endpoint.contains("/search"))
                 {
-                    // Song search results in playlist
                     message = songs.isEmpty() ? "No songs found" : "Song search results loaded successfully";
-                    emit songSearchResultsLoaded(effectivePlaylistId, songs, message);
+                    m_searchSongModel->setSongs(songs);
+                    emit songSearchResultsLoaded(playlistId, songs, message);
                 }
                 else
                 {
-                    // Regular songs in playlist
                     message = songs.isEmpty() ? "No songs in this playlist" : "Songs loaded successfully";
-                    emit songsLoaded(effectivePlaylistId, songs, message);
+                    m_currentSongs = songs;
+                    m_totalPages = m_currentSongs.count() > 0 ? (m_currentSongs.count() + m_itemsPerPage - 1) / m_itemsPerPage : 0;
+                    if (m_currentPage >= m_totalPages && m_totalPages > 0)
+                        m_currentPage = m_totalPages - 1;
+                    else if (m_totalPages == 0)
+                        m_currentPage = 0;
+                    updatePageSongs();
+                    emit totalPagesChanged();
+                    emit currentPageChanged();
+                    emit songsLoaded(playlistId, songs, message);
                 }
             }
         }
@@ -391,6 +483,23 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                 if (message == "Song removed from playlist successfully")
                 {
                     emit songRemoved(playlistId, songId);
+                    // Update current songs
+                    for (int i = 0; i < m_currentSongs.count(); ++i)
+                    {
+                        if (m_currentSongs[i].id == songId)
+                        {
+                            m_currentSongs.removeAt(i);
+                            break;
+                        }
+                    }
+                    m_totalPages = m_currentSongs.count() > 0 ? (m_currentSongs.count() + m_itemsPerPage - 1) / m_itemsPerPage : 0;
+                    if (m_currentPage >= m_totalPages && m_totalPages > 0)
+                        m_currentPage = m_totalPages - 1;
+                    else if (m_totalPages == 0)
+                        m_currentPage = 0;
+                    updatePageSongs();
+                    emit totalPagesChanged();
+                    emit currentPageChanged();
                 }
                 else
                 {
@@ -407,7 +516,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
     }
     else
     {
-        // Handle specific HTTP errors
         int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
         if (doc.isObject())

@@ -11,6 +11,9 @@ class PlaylistViewModel : public QObject
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
     Q_PROPERTY(int searchLimit READ searchLimit WRITE setSearchLimit NOTIFY searchLimitChanged)
     Q_PROPERTY(int searchOffset READ searchOffset WRITE setSearchOffset NOTIFY searchOffsetChanged)
+    Q_PROPERTY(int currentPage READ currentPage WRITE setCurrentPage NOTIFY currentPageChanged)
+    Q_PROPERTY(int totalPages READ totalPages NOTIFY totalPagesChanged)
+    Q_PROPERTY(int itemsPerPage READ itemsPerPage WRITE setItemsPerPage NOTIFY itemsPerPageChanged)
 
 public:
     explicit PlaylistViewModel(QObject *parent = nullptr);
@@ -20,9 +23,14 @@ public:
     QString errorMessage() const { return m_errorMessage; }
     int searchLimit() const { return m_searchLimit; }
     int searchOffset() const { return m_searchOffset; }
+    int currentPage() const { return m_playlistModel->currentPage(); }
+    int totalPages() const { return m_playlistModel->totalPages(); }
+    int itemsPerPage() const { return m_playlistModel->itemsPerPage(); }
 
     Q_INVOKABLE void setSearchLimit(int limit);
     Q_INVOKABLE void setSearchOffset(int offset);
+    Q_INVOKABLE void setCurrentPage(int page);
+    Q_INVOKABLE void setItemsPerPage(int items);
     Q_INVOKABLE void loadPlaylists();
     Q_INVOKABLE void createNewPlaylist(const QString &name);
     Q_INVOKABLE void updatePlaylist(int playlistId, const QString &name);
@@ -46,6 +54,9 @@ signals:
     void songSearchResultsLoaded(int playlistId, const QVariantList &songs, const QString &message);
     void searchLimitChanged();
     void searchOffsetChanged();
+    void currentPageChanged();
+    void totalPagesChanged();
+    void itemsPerPageChanged();
 
 private slots:
     void handleError(const QString &error);

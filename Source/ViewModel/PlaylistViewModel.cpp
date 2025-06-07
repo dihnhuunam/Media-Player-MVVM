@@ -23,6 +23,12 @@ PlaylistViewModel::PlaylistViewModel(QObject *parent)
             this, &PlaylistViewModel::onSearchResultsLoaded);
     connect(m_playlistModel, &PlaylistModel::songSearchResultsLoaded,
             this, &PlaylistViewModel::onSongSearchResultsLoaded);
+    connect(m_playlistModel, &PlaylistModel::currentPageChanged,
+            this, &PlaylistViewModel::currentPageChanged);
+    connect(m_playlistModel, &PlaylistModel::totalPagesChanged,
+            this, &PlaylistViewModel::totalPagesChanged);
+    connect(m_playlistModel, &PlaylistModel::itemsPerPageChanged,
+            this, &PlaylistViewModel::itemsPerPageChanged);
 }
 
 PlaylistViewModel::~PlaylistViewModel()
@@ -47,6 +53,16 @@ void PlaylistViewModel::setSearchOffset(int offset)
         emit searchOffsetChanged();
         qDebug() << "PlaylistViewModel: Search offset set to" << offset;
     }
+}
+
+void PlaylistViewModel::setCurrentPage(int page)
+{
+    m_playlistModel->setCurrentPage(page);
+}
+
+void PlaylistViewModel::setItemsPerPage(int items)
+{
+    m_playlistModel->setItemsPerPage(items);
 }
 
 void PlaylistViewModel::loadPlaylists()
