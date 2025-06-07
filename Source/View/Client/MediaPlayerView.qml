@@ -13,9 +13,9 @@ Item {
     property real topControlButtonSize: 90
     property real topControlIconSize: 45
     property real topControlSearchHeight: 60
-    property real topControlSearchRadius: 12 // Changed to match input field radius
+    property real topControlSearchRadius: 12
     property real topControlSearchIconSize: 30
-    property real topControlSearchFontSize: 22 // Aligned with formFieldFontSize
+    property real topControlSearchFontSize: 22
     property real topControlSpacing: 30
     property real topControlMargin: 18
 
@@ -39,12 +39,7 @@ Item {
     property real searchResultFontSize: 16
     property real searchResultMargin: 10
 
-    property bool shuffle: false
-    property int repeatMode: 0 // 0: No repeat, 1: Repeat one, 2: Repeat all
-    property bool muted: false
-    property real previousVolume: 0.5
     property bool isSearching: false
-    property bool allSongsLoaded: false
 
     function formatDuration(milliseconds) {
         if (!milliseconds || milliseconds < 0 || isNaN(milliseconds)) {
@@ -54,127 +49,6 @@ Item {
         let minutes = Math.floor(seconds / 60);
         let secs = Math.floor(seconds % 60);
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
-    }
-
-    function normalizeString(str) {
-        return str.trim().replace(/\s+/g, " ");
-    }
-
-    function findCurrentSongIndex(songList) {
-        if (songList.length === 0 || !AppState.currentMediaTitle) {
-            console.log("Song list empty or no current song");
-            return 0;
-        }
-        let normalizedTitle = normalizeString(AppState.currentMediaTitle);
-        let normalizedArtist = normalizeString(AppState.currentMediaArtist);
-        for (let i = 0; i < songList.length; i++) {
-            let song = songList[i];
-            let songTitle = normalizeString(song.title);
-            let songArtists = normalizeString(song.artists ? song.artists.join(", ") : "Unknown Artist");
-            if (songTitle === normalizedTitle && songArtists === normalizedArtist) {
-                return i;
-            }
-        }
-        console.log("Current song not found in list, defaulting to index 0");
-        return 0;
-    }
-
-    function playSongAtIndex(songList, index) {
-        if (index < 0 || index >= songList.length) {
-            console.log("Invalid song index:", index);
-            return;
-        }
-        let song = songList[index];
-        let artistsStr = song.artists ? song.artists.join(", ") : "Unknown Artist";
-        AppState.setState({
-            title: song.title,
-            artist: artistsStr,
-            filePath: song.file_path,
-            playlistId: AppState.currentPlaylistId
-        });
-        songViewModel.playSong(song.id, song.title, song.artists);
-        console.log("Playing song at index:", index, "Title:", song.title, "Artists:", artistsStr);
-    }
-
-    function getAllSongsFromModel() {
-        let songs = [];
-        if (songViewModel && songViewModel.songModel && allSongsLoaded) {
-            for (let i = 0; i < songViewModel.songModel.rowCount(); i++) {
-                let index = songViewModel.songModel.index(i, 0);
-                songs.push({
-                    id: songViewModel.songModel.data(index, songViewModel.songModel.IdRole),
-                    title: songViewModel.songModel.data(index, songViewModel.songModel.TitleRole),
-                    artists: songViewModel.songModel.data(index, songViewModel.songModel.ArtistsRole),
-                    file_path: songViewModel.songModel.data(index, songViewModel.songModel.FilePathRole),
-                    genres: songViewModel.songModel.data(index, songViewModel.songModel.GenresRole)
-                });
-            }
-        }
-        return songs;
-    }
-
-    function handleNext() {
-        let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
-        if (songList.length === 0) {
-            console.log("No songs available to play");
-            return;
-        }
-
-        let currentIndex = findCurrentSongIndex(songList);
-        if (repeatMode === 1) {
-            playSongAtIndex(songList, currentIndex);
-        } else {
-            let nextIndex;
-            if (shuffle) {
-                nextIndex = Math.floor(Math.random() * songList.length);
-                while (nextIndex === currentIndex && songList.length > 1) {
-                    nextIndex = Math.floor(Math.random() * songList.length);
-                }
-            } else {
-                nextIndex = currentIndex + 1;
-                if (nextIndex >= songList.length) {
-                    if (repeatMode === 2) {
-                        nextIndex = 0;
-                    } else {
-                        console.log("Reached end of song list, stopping");
-                        return;
-                    }
-                }
-            }
-            playSongAtIndex(songList, nextIndex);
-        }
-    }
-
-    function handlePrevious() {
-        let songList = AppState.currentPlaylistId !== -1 ? AppState.currentMediaFiles : getAllSongsFromModel();
-        if (songList.length === 0) {
-            console.log("No songs available to play");
-            return;
-        }
-
-        let currentIndex = findCurrentSongIndex(songList);
-        if (repeatMode === 1) {
-            playSongAtIndex(songList, currentIndex);
-        } else {
-            let prevIndex;
-            if (shuffle) {
-                prevIndex = Math.floor(Math.random() * songList.length);
-                while (prevIndex === currentIndex && songList.length > 1) {
-                    prevIndex = Math.floor(Math.random() * songList.length);
-                }
-            } else {
-                prevIndex = currentIndex - 1;
-                if (prevIndex < 0) {
-                    if (repeatMode === 2) {
-                        prevIndex = songList.length - 1;
-                    } else {
-                        console.log("Reached start of song list, stopping");
-                        return;
-                    }
-                }
-            }
-            playSongAtIndex(songList, prevIndex);
-        }
     }
 
     FolderDialog {
@@ -700,8 +574,8 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        shuffle = !shuffle;
-                        console.log("Shuffle Button Clicked, enabled:", shuffle);
+                        songViewModel.setShuffle(!songViewModel.shuffle);
+                        console.log("Shuffle Button Clicked, enabled:", songViewModel.shuffle);
                     }
                     background: Rectangle {
                         color: parent.hovered ? "#e6e9ec" : "transparent"
@@ -712,7 +586,7 @@ Item {
                         source: "qrc:/Assets/shuffle.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: shuffle ? 1.0 : 0.8
+                        opacity: songViewModel.shuffle ? 1.0 : 0.8
                     }
                 }
 
@@ -721,7 +595,7 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        handlePrevious();
+                        songViewModel.previousSong();
                         console.log("Previous Button Clicked");
                     }
                     background: Rectangle {
@@ -771,7 +645,7 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        handleNext();
+                        songViewModel.nextSong();
                         console.log("Next Button Clicked");
                     }
                     background: Rectangle {
@@ -792,8 +666,8 @@ Item {
                     Layout.preferredHeight: controlButtonSize * scaleFactor
                     flat: true
                     onClicked: {
-                        repeatMode = (repeatMode + 1) % 3;
-                        console.log("Repeat Button Clicked, mode:", repeatMode);
+                        songViewModel.setRepeatMode((songViewModel.repeatMode + 1) % 3);
+                        console.log("Repeat Button Clicked, mode:", songViewModel.repeatMode);
                     }
                     background: Rectangle {
                         color: parent.hovered ? "#e6e9ec" : "transparent"
@@ -801,10 +675,10 @@ Item {
                     }
                     Image {
                         anchors.centerIn: parent
-                        source: repeatMode === 1 ? "qrc:/Assets/repeat-one.png" : "qrc:/Assets/repeat.png"
+                        source: songViewModel.repeatMode === 1 ? "qrc:/Assets/repeat-one.png" : "qrc:/Assets/repeat.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: repeatMode > 0 ? 1.0 : 0.8
+                        opacity: songViewModel.repeatMode > 0 ? 1.0 : 0.8
                     }
                 }
             }
@@ -820,14 +694,8 @@ Item {
                     flat: true
                     onClicked: {
                         if (songViewModel) {
-                            muted = !muted;
-                            if (muted) {
-                                previousVolume = songViewModel.volume;
-                                songViewModel.setVolume(0);
-                            } else {
-                                songViewModel.setVolume(previousVolume);
-                            }
-                            console.log("Volume Button Clicked, muted:", muted, "volume:", songViewModel.volume);
+                            songViewModel.setMuted(!songViewModel.muted);
+                            console.log("Volume Button Clicked, muted:", songViewModel.muted);
                         }
                     }
                     background: Rectangle {
@@ -836,7 +704,7 @@ Item {
                     }
                     Image {
                         anchors.centerIn: parent
-                        source: muted || (songViewModel && songViewModel.volume === 0) ? "qrc:/Assets/muted.png" : "qrc:/Assets/volume.png"
+                        source: songViewModel && (songViewModel.muted || songViewModel.volume === 0) ? "qrc:/Assets/muted.png" : "qrc:/Assets/volume.png"
                         width: volumeIconSize * scaleFactor
                         height: volumeIconSize * scaleFactor
                         opacity: parent.hovered ? 1.0 : 0.8
@@ -859,10 +727,6 @@ Item {
                     onValueChanged: {
                         if (songViewModel) {
                             songViewModel.setVolume(value);
-                            muted = (value === 0);
-                            if (!muted) {
-                                previousVolume = value;
-                            }
                             console.log("Volume slider value:", value);
                         }
                     }
@@ -893,7 +757,6 @@ Item {
             console.log("MediaPlayerView: Playback error:", error);
         }
         function onAllSongsFetched() {
-            allSongsLoaded = true;
             console.log("MediaPlayerView: All songs fetched, count:", songViewModel.songModel.count);
         }
     }
