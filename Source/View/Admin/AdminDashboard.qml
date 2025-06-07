@@ -132,7 +132,7 @@ Item {
                     font.pixelSize: formFieldFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
-                        adminViewModel.fetchAllUsers(); // Gọi hàm lấy danh sách người dùng
+                        adminViewModel.fetchAllUsers(); 
                         NavigationManager.navigateTo("qrc:/Source/View/Admin/AdminViewUsers.qml");
                         console.log("AdminDashboard: Navigate to AdminViewUsers");
                     }

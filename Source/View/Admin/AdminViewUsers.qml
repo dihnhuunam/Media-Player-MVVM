@@ -51,11 +51,11 @@ Item {
             RowLayout {
                 id: topControl
                 Layout.topMargin: topControlTopMargin * scaleFactor
-                Layout.preferredWidth: 800 * scaleFactor // Khớp với chiều rộng của tableContainer
+                Layout.preferredWidth: 800 * scaleFactor
                 Layout.preferredHeight: topControlSearchHeight * scaleFactor
                 Layout.alignment: Qt.AlignHCenter
-                Layout.leftMargin: (parent.width - 800 * scaleFactor) / 2 // Căn lề trái để thẳng với tableContainer
-                Layout.rightMargin: (parent.width - 800 * scaleFactor) / 2 // Căn lề phải để thẳng với tableContainer
+                Layout.leftMargin: (parent.width - 800 * scaleFactor) / 2
+                Layout.rightMargin: (parent.width - 800 * scaleFactor) / 2
                 spacing: topControlSpacing * scaleFactor
 
                 HoverButton {
@@ -139,7 +139,6 @@ Item {
                 }
             }
 
-            // Container cho header và ListView
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -158,7 +157,6 @@ Item {
                     border.width: 1
                     anchors.horizontalCenter: parent.horizontalCenter
 
-                    // Header
                     Row {
                         id: headerRow
                         width: parent.width
@@ -250,7 +248,6 @@ Item {
                         }
                     }
 
-                    // ListView
                     ListView {
                         id: usersListView
                         anchors.top: headerRow.bottom
@@ -271,7 +268,6 @@ Item {
                                 anchors.fill: parent
                                 spacing: 0
 
-                                // Cột Number
                                 Text {
                                     width: 60 * scaleFactor
                                     height: parent.height
@@ -284,7 +280,6 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                // Cột Email
                                 Text {
                                     width: 250 * scaleFactor
                                     height: parent.height
@@ -297,7 +292,6 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                // Cột Role
                                 Text {
                                     width: 100 * scaleFactor
                                     height: parent.height
@@ -310,7 +304,6 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                // Cột Name
                                 Text {
                                     width: 200 * scaleFactor
                                     height: parent.height
@@ -323,7 +316,6 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                // Cột Date of Birth
                                 Text {
                                     width: 190 * scaleFactor
                                     height: parent.height

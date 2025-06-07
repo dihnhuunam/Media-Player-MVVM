@@ -8,11 +8,11 @@ import AppState 1.0
 
 Item {
     property real scaleFactor: parent ? Math.min(parent.width / 1024, parent.height / 600) : 1.0
-    property real formFieldHeight: 50 // Giảm từ 55
-    property real formFieldFontSize: 20 // Giảm từ 22
-    property real formSpacing: 16 // Giảm từ 18
-    property real formWidth: 346 // Giảm từ 385
-    property real formHeight: 585 // Giảm từ 650
+    property real formFieldHeight: 50
+    property real formFieldFontSize: 20
+    property real formSpacing: 16
+    property real formWidth: 346
+    property real formHeight: 585
     property var selectedFilePaths: []
 
     Rectangle {
@@ -32,24 +32,24 @@ Item {
             anchors.centerIn: parent
             width: formWidth * scaleFactor
             height: formHeight * scaleFactor
-            radius: 18 * scaleFactor // Giảm từ 20
+            radius: 18 * scaleFactor
             border.color: "#d0d7de"
             border.width: 1 * scaleFactor
             color: "#ffffff"
 
             ColumnLayout {
                 anchors.centerIn: parent
-                width: formWidth * scaleFactor - 18 * scaleFactor // Điều chỉnh margin
+                width: formWidth * scaleFactor - 18 * scaleFactor
                 spacing: formSpacing * scaleFactor
 
                 Text {
                     text: "Upload Music Files"
-                    font.pixelSize: 31 * scaleFactor // Giảm từ 34
+                    font.pixelSize: 31 * scaleFactor
                     font.family: "Arial"
                     font.weight: Font.Medium
                     color: "#1a202c"
                     Layout.alignment: Qt.AlignHCenter
-                    Layout.topMargin: 13 * scaleFactor // Giảm từ 15
+                    Layout.topMargin: 13 * scaleFactor
                 }
 
                 Rectangle {
@@ -87,7 +87,7 @@ Item {
                     id: titleField
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     color: "#f6f8fa"
                     border.color: titleInput.activeFocus ? "#3182ce" : "#d0d7de"
                     border.width: titleInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
@@ -95,7 +95,7 @@ Item {
                     TextField {
                         id: titleInput
                         anchors.fill: parent
-                        anchors.margins: 7 * scaleFactor // Giảm từ 8
+                        anchors.margins: 7 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         font.family: "Arial"
                         color: "#2d3748"
@@ -110,7 +110,7 @@ Item {
                     id: genresField
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     color: "#f6f8fa"
                     border.color: genresInput.activeFocus ? "#3182ce" : "#d0d7de"
                     border.width: genresInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
@@ -118,7 +118,7 @@ Item {
                     TextField {
                         id: genresInput
                         anchors.fill: parent
-                        anchors.margins: 7 * scaleFactor // Giảm từ 8
+                        anchors.margins: 7 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         font.family: "Arial"
                         color: "#2d3748"
@@ -133,7 +133,7 @@ Item {
                     id: artistsField
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     color: "#f6f8fa"
                     border.color: artistsInput.activeFocus ? "#3182ce" : "#d0d7de"
                     border.width: artistsInput.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
@@ -141,7 +141,7 @@ Item {
                     TextField {
                         id: artistsInput
                         anchors.fill: parent
-                        anchors.margins: 7 * scaleFactor // Giảm từ 8
+                        anchors.margins: 7 * scaleFactor
                         font.pixelSize: formFieldFontSize * scaleFactor
                         font.family: "Arial"
                         color: "#2d3748"
@@ -158,7 +158,7 @@ Item {
                     text: "Select Music Files"
                     defaultColor: "#2b6cb0"
                     hoverColor: "#3182ce"
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
@@ -187,11 +187,10 @@ Item {
                     }
                 }
 
-                // Thêm ListView để hiển thị các file đã chọn
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 90 * scaleFactor // Giảm từ 100
-                    radius: 6 * scaleFactor // Điều chỉnh từ 12
+                    Layout.preferredHeight: 90 * scaleFactor
+                    radius: 6 * scaleFactor
                     color: "#f6f8fa"
                     border.color: "#d0d7de"
                     border.width: 1 * scaleFactor
@@ -200,14 +199,14 @@ Item {
                     ListView {
                         id: selectedFilesView
                         anchors.fill: parent
-                        anchors.margins: 7 * scaleFactor // Giảm từ 8
+                        anchors.margins: 7 * scaleFactor
                         model: selectedFilePaths
                         interactive: true
                         spacing: 4 * scaleFactor
 
                         delegate: Text {
-                            text: modelData.split("/").pop() // Hiển thị tên file thay vì toàn bộ đường dẫn
-                            font.pixelSize: 14 * scaleFactor // Giảm từ 16
+                            text: modelData.split("/").pop()
+                            font.pixelSize: 14 * scaleFactor
                             font.family: "Arial"
                             color: "#2d3748"
                             width: parent.width
@@ -217,7 +216,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "No files selected"
-                            font.pixelSize: 14 * scaleFactor // Giảm từ 16
+                            font.pixelSize: 14 * scaleFactor
                             font.family: "Arial"
                             color: "#2d3748"
                             visible: selectedFilesView.count === 0
@@ -231,7 +230,7 @@ Item {
                     text: "Upload"
                     defaultColor: "#2b6cb0"
                     hoverColor: "#3182ce"
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     font.family: "Arial"
                     font.pixelSize: formFieldFontSize * scaleFactor
                     onClicked: {
@@ -276,7 +275,7 @@ Item {
                     text: "Back"
                     defaultColor: "#2b6cb0"
                     hoverColor: "#3182ce"
-                    radius: 11 * scaleFactor // Giảm từ 12
+                    radius: 11 * scaleFactor
                     font.pixelSize: formFieldFontSize * scaleFactor
                     font.family: "Arial"
                     onClicked: {
