@@ -45,9 +45,12 @@ Item {
                     playlistViewModel.searchSongsInPlaylist(AppState.currentPlaylistId, searchInput.text);
                 } else {
                     console.log("Error: Invalid playlist ID");
+                    errorText.text = "Invalid playlist ID";
+                    errorText.visible = true;
                 }
             } else {
                 songSearchResultsModel.clear();
+                errorText.visible = false;
             }
         }
     }
@@ -86,6 +89,7 @@ Item {
                         console.log("Back button clicked, navigating back");
                         songSearchResultsModel.clear();
                         searchInput.text = "Search Songs";
+                        errorText.visible = false;
                         NavigationManager.goBack();
                     }
                     background: Rectangle {
@@ -228,7 +232,13 @@ Item {
                             spacing: 8 * scaleFactor
 
                             Text {
-                                text: (searchInput.text !== "Search Songs" && searchInput.text !== "" ? index + 1 : (currentPage * itemsPerPage + index + 1)) + ". " + (searchInput.text !== "Search Songs" && searchInput.text !== "" ? model.title : modelData.title) + " - " + (searchInput.text !== "Search Songs" && searchInput.text !== "" ? (model.artists ? model.artists.join(", ") : "Unknown Artist") : (modelData.artists ? modelData.artists.join(", ") : "Unknown Artist"))
+                                text: {
+                                    let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
+                                    let indexText = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? (index + 1) : (currentPage * itemsPerPage + index + 1);
+                                    let title = songData.title || "Unknown Title";
+                                    let artists = songData.artists && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist";
+                                    return indexText + ". " + title + " - " + artists;
+                                }
                                 font.pixelSize: mediaItemFontSize * scaleFactor
                                 font.family: "Arial"
                                 color: "#2d3748"
@@ -242,14 +252,14 @@ Item {
                                     onClicked: {
                                         let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
                                         AppState.setState({
-                                            title: songData.title,
-                                            artist: songData.artists ? songData.artists.join(", ") : "Unknown Artist",
-                                            filePath: songData.file_path,
+                                            title: songData.title || "Unknown Title",
+                                            artist: songData.artists && songData.artists.length > 0 ? songData.artists.join(", ") : "Unknown Artist",
+                                            filePath: songData.file_path || "",
                                             playlistId: AppState.currentPlaylistId
                                         });
-                                        songViewModel.playSong(songData.id, songData.title, songData.artists);
+                                        songViewModel.playSong(songData.id, songData.title || "Unknown Title", songData.artists || ["Unknown Artist"]);
                                         NavigationManager.navigateTo("qrc:/Source/View/Client/MediaPlayerView.qml");
-                                        console.log("Selected song:", songData.title, "Artists:", songData.artists.join(", "), "Playing and navigated to MediaPlayerView");
+                                        console.log("Selected song:", songData.title || "Unknown Title", "Artists:", songData.artists ? songData.artists.join(", ") : "Unknown Artist", "Playing and navigated to MediaPlayerView");
                                     }
                                 }
                             }
@@ -259,10 +269,9 @@ Item {
                                 Layout.preferredHeight: mediaItemHeight * scaleFactor
                                 flat: true
                                 onClicked: {
-                                    let songId = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model.id : modelData.id;
-                                    let songTitle = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model.title : modelData.title;
-                                    playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, songId);
-                                    console.log("Removed song:", songTitle, "from playlist ID:", AppState.currentPlaylistId);
+                                    let songData = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? model : modelData;
+                                    playlistViewModel.removeSongFromPlaylist(AppState.currentPlaylistId, songData.id);
+                                    console.log("Removed song:", songData.title || "Unknown Title", "from playlist ID:", AppState.currentPlaylistId);
                                 }
                                 background: Rectangle {
                                     color: parent.hovered ? "#e6e9ec" : "transparent"
@@ -280,12 +289,35 @@ Item {
                     }
 
                     Text {
+                        id: noResultsText
                         anchors.centerIn: parent
                         text: searchInput.text !== "Search Songs" && searchInput.text !== "" ? "No search results" : "No songs in this playlist"
                         font.pixelSize: mediaItemFontSize * scaleFactor
                         font.family: "Arial"
                         color: "#2d3748"
                         visible: mediaFileView.count === 0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                            }
+                        }
+                    }
+
+                    Text {
+                        id: errorText
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: noResultsText.bottom
+                        anchors.topMargin: mediaSpacing * scaleFactor
+                        text: ""
+                        font.pixelSize: mediaItemFontSize * scaleFactor
+                        font.family: "Arial"
+                        color: "#ff0000"
+                        visible: false
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                            }
+                        }
                     }
 
                     Behavior on opacity {
@@ -401,6 +433,7 @@ Item {
                 totalPages = Math.ceil(AppState.currentMediaFiles.length / itemsPerPage);
                 currentPage = 0;
                 mediaFileView.model = getCurrentPageItems();
+                errorText.visible = false;
                 console.log("MediaFileView: Loaded songs for playlist ID:", playlistId, "Count:", songs.length, "Message:", message);
             }
         }
@@ -415,7 +448,6 @@ Item {
         function onSongRemovedFromPlaylist(playlistId, songId) {
             if (playlistId === AppState.currentPlaylistId) {
                 if (searchInput.text !== "Search Songs" && searchInput.text !== "") {
-                    // Remove from search results
                     for (var i = 0; i < songSearchResultsModel.count; i++) {
                         if (songSearchResultsModel.get(i).id === songId) {
                             songSearchResultsModel.remove(i);
@@ -423,7 +455,6 @@ Item {
                         }
                     }
                 }
-                // Remove from AppState.currentMediaFiles
                 var updatedMediaFiles = [];
                 for (var j = 0; j < AppState.currentMediaFiles.length; j++) {
                     if (AppState.currentMediaFiles[j].id !== songId) {
@@ -439,7 +470,6 @@ Item {
                 } else if (totalPages === 0) {
                     currentPage = 0;
                 }
-                // Force immediate update of ListView model
                 mediaFileView.model = null;
                 mediaFileView.model = getCurrentPageItems();
                 console.log("MediaFileView: Song removed from playlist ID:", playlistId, "Song ID:", songId, "Updated song count:", AppState.currentMediaFiles.length);
@@ -453,16 +483,21 @@ Item {
                 for (var i = 0; i < songs.length; i++) {
                     songSearchResultsModel.append({
                         id: songs[i].id,
-                        title: songs[i].title,
-                        artists: songs[i].artists,
-                        file_path: songs[i].file_path
+                        title: songs[i].title || "Unknown Title",
+                        artists: songs[i].artists && songs[i].artists.length > 0 ? songs[i].artists : ["Unknown Artist"],
+                        file_path: songs[i].file_path || ""
                     });
                 }
+                mediaFileView.model = null;
+                mediaFileView.model = (searchInput.text !== "Search Songs" && searchInput.text !== "") ? songSearchResultsModel : getCurrentPageItems();
+                errorText.visible = false;
             }
         }
 
         function onErrorOccurred(error) {
             console.log("MediaFileView: Error:", error);
+            errorText.text = error;
+            errorText.visible = true;
         }
     }
 
@@ -470,6 +505,8 @@ Item {
         target: songViewModel
         function onErrorOccurred(error) {
             console.log("MediaFileView: Song playback error:", error);
+            errorText.text = error;
+            errorText.visible = true;
         }
     }
 

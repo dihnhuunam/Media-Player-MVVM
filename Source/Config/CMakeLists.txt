@@ -17,6 +17,7 @@ find_package(Qt6
         Qml
         Gui
         Network
+        # SerialPort
 )
 
 target_include_directories(lConfig PUBLIC
@@ -30,4 +31,5 @@ target_link_libraries(lConfig PUBLIC
     Qt6::Qml
     Qt6::Gui
     Qt6::Network
+    # Qt6::SerialPort
 )

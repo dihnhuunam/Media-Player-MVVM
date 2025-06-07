@@ -54,9 +54,7 @@ QHash<int, QByteArray> PlaylistModel::roleNames() const
 
 bool PlaylistModel::isAuthenticated() const
 {
-    return !m_settings->value("jwt_token")
-                .toString()
-                .isEmpty();
+    return !m_settings->value("jwt_token").toString().isEmpty();
 }
 
 void PlaylistModel::loadUserPlaylists()
@@ -206,8 +204,8 @@ void PlaylistModel::loadSongsInPlaylist(int playlistId)
     }
 
     QNetworkReply *reply = m_networkManager.get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]()
-            { handleNetworkReply(reply); });
+    connect(reply, &QNetworkReply::finished, this, [this, reply, playlistId]()
+            { handleNetworkReply(reply, playlistId); });
 }
 
 void PlaylistModel::search(const QString &query, int limit, int offset)
@@ -254,8 +252,8 @@ void PlaylistModel::searchSongsInPlaylist(int playlistId, const QString &query, 
     }
 
     QNetworkReply *reply = m_networkManager.get(request);
-    connect(reply, &QNetworkReply::finished, this, [this, reply]()
-            { handleNetworkReply(reply); });
+    connect(reply, &QNetworkReply::finished, this, [this, reply, playlistId]()
+            { handleNetworkReply(reply, playlistId); });
 }
 
 void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int songId)
@@ -319,36 +317,48 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                     song.title = obj["title"].toString().trimmed();
                     if (song.title.isEmpty())
                         song.title = "Unknown Title";
+
+                    // Handle artists safely
                     QJsonArray artistsArray = obj["artists"].toArray();
                     QStringList artists;
-                    if (artistsArray.isEmpty())
+                    if (artistsArray.isEmpty() || !obj.contains("artists"))
                         artists.append("Unknown Artist");
                     else
                         for (const QJsonValue &artist : artistsArray)
-                            artists.append(artist.toString());
+                            if (!artist.toString().trimmed().isEmpty())
+                                artists.append(artist.toString().trimmed());
+                    if (artists.isEmpty())
+                        artists.append("Unknown Artist");
                     song.artists = artists;
+
                     song.filePath = obj["file_path"].toString();
+                    if (song.filePath.isEmpty())
+                        song.filePath = "";
+
+                    // Handle genres safely
                     QJsonArray genresArray = obj["genres"].toArray();
                     QStringList genres;
-                    for (const QJsonValue &genre : genresArray)
-                        genres.append(genre.toString());
+                    if (!genresArray.isEmpty())
+                        for (const QJsonValue &genre : genresArray)
+                            if (!genre.toString().trimmed().isEmpty())
+                                genres.append(genre.toString().trimmed());
                     song.genres = genres;
+
                     songs.append(song);
                 }
-                // Extract playlistId from URL
-                QStringList pathParts = endpoint.split('/');
-                int extractedPlaylistId = pathParts[pathParts.size() - 2].toInt();
+                // Use provided playlistId instead of extracting from URL
+                int effectivePlaylistId = playlistId;
                 if (endpoint.contains("/search"))
                 {
                     // Song search results in playlist
                     message = songs.isEmpty() ? "No songs found" : "Song search results loaded successfully";
-                    emit songSearchResultsLoaded(extractedPlaylistId, songs, message);
+                    emit songSearchResultsLoaded(effectivePlaylistId, songs, message);
                 }
                 else
                 {
                     // Regular songs in playlist
                     message = songs.isEmpty() ? "No songs in this playlist" : "Songs loaded successfully";
-                    emit songsLoaded(extractedPlaylistId, songs, message);
+                    emit songsLoaded(effectivePlaylistId, songs, message);
                 }
             }
         }
@@ -380,7 +390,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
             {
                 if (message == "Song removed from playlist successfully")
                 {
-                    // Use the playlistId passed to the function instead of relying on JSON
                     emit songRemoved(playlistId, songId);
                 }
                 else
