@@ -1,6 +1,4 @@
-#ifndef SONGVIEWMODEL_H
-#define SONGVIEWMODEL_H
-
+#pragma once
 #include <QObject>
 #include <QMediaPlayer>
 #include <QAudioOutput>
@@ -87,5 +85,3 @@ private:
     bool m_allSongsLoaded = false;
     QVariantList m_allSongs;
 };
-
-#endif // SONGVIEWMODEL_H

@@ -68,7 +68,7 @@ void UartViewModel::onVolumeChanged(int volume)
 {
     if (m_songViewModel)
     {
-        qreal scaledVolume = volume / 100.0; // Scale 0-100 to 0.0-1.0
+        qreal scaledVolume = volume / 100.0;
         m_songViewModel->setVolume(scaledVolume);
         qDebug() << "UartViewModel: Volume changed to" << volume << "% (" << scaledVolume << ")";
     }

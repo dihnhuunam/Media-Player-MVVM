@@ -37,13 +37,11 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
 
     QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
-    // Title part
     QHttpPart titlePart;
     titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"title\""));
     titlePart.setBody(title.toUtf8());
     multiPart->append(titlePart);
 
-    // Genres part (split into array)
     QHttpPart genresPart;
     genresPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"genres\""));
     QJsonArray genresArray;
@@ -55,7 +53,6 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
     genresPart.setBody(genresDoc.toJson(QJsonDocument::Compact));
     multiPart->append(genresPart);
 
-    // Artists part (split into array)
     QHttpPart artistsPart;
     artistsPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"artists\""));
     QJsonArray artistsArray;
@@ -67,7 +64,6 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
     artistsPart.setBody(artistsDoc.toJson(QJsonDocument::Compact));
     multiPart->append(artistsPart);
 
-    // File part
     QFile *file = new QFile(filePath);
     if (!file->exists())
     {

@@ -483,7 +483,6 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                 if (message == "Song removed from playlist successfully")
                 {
                     emit songRemoved(playlistId, songId);
-                    // Update current songs
                     for (int i = 0; i < m_currentSongs.count(); ++i)
                     {
                         if (m_currentSongs[i].id == songId)

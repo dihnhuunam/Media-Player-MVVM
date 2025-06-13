@@ -1,6 +1,4 @@
-#ifndef ADMINVIEWMODEL_HPP
-#define ADMINVIEWMODEL_HPP
-
+#pragma once
 #include <QAbstractListModel>
 #include "AdminModel.hpp"
 
@@ -43,5 +41,3 @@ private:
     AdminModel *m_adminModel;
     QList<QVariantMap> m_users;
 };
-
-#endif // ADMINVIEWMODEL_HPP

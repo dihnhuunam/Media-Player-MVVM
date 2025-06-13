@@ -62,7 +62,7 @@ void UartModel::handleReadyRead()
     m_buffer.append(m_serialPort->readAll());
     if (!m_bufferTimer.isActive())
     {
-        m_bufferTimer.start(50); // Đợi 50ms để tích lũy dữ liệu
+        m_bufferTimer.start(50);
     }
 }
 
@@ -101,7 +101,6 @@ void UartModel::processCommand(const QString &command)
         return;
     }
 
-    // Xử lý giá trị âm lượng
     bool ok;
     int volume = command.toInt(&ok);
     if (ok && volume >= 0 && volume <= 100)
@@ -111,7 +110,6 @@ void UartModel::processCommand(const QString &command)
         return;
     }
 
-    // Xử lý các lệnh điều khiển
     if (m_validCommands.contains(command))
     {
         if (command == "play_pause")

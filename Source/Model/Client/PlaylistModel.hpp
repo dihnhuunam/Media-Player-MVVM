@@ -1,6 +1,4 @@
-#ifndef PLAYLISTMODEL_H
-#define PLAYLISTMODEL_H
-
+#pragma once
 #include <QAbstractListModel>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -125,5 +123,3 @@ private:
     PageSongModel *m_pageSongModel;
     PageSongModel *m_searchSongModel;
 };
-
-#endif // PLAYLISTMODEL_H

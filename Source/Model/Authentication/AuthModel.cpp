@@ -83,14 +83,12 @@ void AuthModel::updateProfile(int userId, const QString &name, const QString &do
     QJsonObject json;
     bool hasData = false;
 
-    // Add name if it has changed or is non-empty
     if (!name.isEmpty() && name != AppState::instance()->name())
     {
         json["name"] = name;
         hasData = true;
     }
 
-    // Add dateOfBirth if it has changed or is non-empty
     QString formattedDob = dob;
     if (!dob.isEmpty() && dob != AppState::instance()->dateOfBirth())
     {

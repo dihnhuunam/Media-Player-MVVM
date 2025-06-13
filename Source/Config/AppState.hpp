@@ -1,6 +1,4 @@
-#ifndef APPSTATE_HPP
-#define APPSTATE_HPP
-
+#pragma once
 #include <QObject>
 #include <QVariantList>
 #include <QSettings>
@@ -79,5 +77,3 @@ private:
     int m_userId;
     QSettings *m_settings;
 };
-
-#endif // APPSTATE_HPP

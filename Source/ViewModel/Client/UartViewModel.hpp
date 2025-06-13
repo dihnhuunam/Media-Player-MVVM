@@ -1,6 +1,4 @@
-#ifndef UARTVIEWMODEL_H
-#define UARTVIEWMODEL_H
-
+#pragma once
 #include <QObject>
 #include "UartModel.hpp"
 #include "SongViewModel.hpp"
@@ -39,5 +37,3 @@ private:
     UartModel *m_uartModel;
     SongViewModel *m_songViewModel;
 };
-
-#endif // UARTVIEWMODEL_H

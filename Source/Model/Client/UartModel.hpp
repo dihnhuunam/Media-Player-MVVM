@@ -1,6 +1,4 @@
-#ifndef UARTMODEL_H
-#define UARTMODEL_H
-
+#pragma once
 #include <QObject>
 #include <QSerialPort>
 #include <QTimer>
@@ -43,5 +41,3 @@ private:
     QTimer m_bufferTimer;
     QStringList m_validCommands;
 };
-
-#endif // UARTMODEL_H

@@ -6,7 +6,7 @@ add_library(lConfig SHARED ${CONFIG_SOURCES})
 
 # Use system Qt6; remove custom path if system Qt6 is preferred
 list(APPEND CMAKE_PREFIX_PATH "/home/dihnhuunam/Qt/6.9.1/gcc_64")
-list(APPEND CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Qt6SerialPort/")
+# list(APPEND CMAKE_PREFIX_PATH "/usr/lib/x86_64-linux-gnu/cmake/Qt6SerialPort/")
 
 find_package(Qt6 
     REQUIRED 

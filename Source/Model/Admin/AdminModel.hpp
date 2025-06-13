@@ -1,5 +1,4 @@
-#ifndef ADMINMODEL_HPP
-#define ADMINMODEL_HPP
+#pragma once
 
 #include <QObject>
 #include <QNetworkAccessManager>
@@ -18,7 +17,7 @@ public slots:
     void deleteSong(int songId);
     void fetchSongById(int songId);
     void fetchAllUsers();
-    void searchUsersByName(const QString &name); 
+    void searchUsersByName(const QString &name);
 
 signals:
     void uploadFinished(bool success, const QString &message, int songId = -1);
@@ -30,5 +29,3 @@ signals:
 private:
     QNetworkAccessManager *m_networkManager;
 };
-
-#endif // ADMINMODEL_HPP

@@ -1,6 +1,4 @@
-#ifndef SONGMODEL_H
-#define SONGMODEL_H
-
+#pragma once
 #include <QAbstractListModel>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -65,5 +63,3 @@ private:
     QNetworkAccessManager *m_networkManager;
     bool m_isLoading = false;
 };
-
-#endif // SONGMODEL_H

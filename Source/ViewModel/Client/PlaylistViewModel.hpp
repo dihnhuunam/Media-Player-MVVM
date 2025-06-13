@@ -1,6 +1,4 @@
-#ifndef PLAYLISTVIEWMODEL_H
-#define PLAYLISTVIEWMODEL_H
-
+#pragma once
 #include <QObject>
 #include "PlaylistModel.hpp"
 
@@ -75,5 +73,3 @@ private:
     int m_searchLimit = 10;
     int m_searchOffset = 0;
 };
-
-#endif // PLAYLISTVIEWMODEL_H
