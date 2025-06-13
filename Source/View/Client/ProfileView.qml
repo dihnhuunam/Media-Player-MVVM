@@ -2,6 +2,7 @@ import QtQuick 6.8
 import QtQuick.Controls 6.8
 import QtQuick.Layouts 6.8
 import QtQuick.Dialogs 6.8
+import Qt5Compat.GraphicalEffects
 import "../Components"
 import "../Helper"
 import AppState 1.0
@@ -184,9 +185,19 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: formFieldHeight * scaleFactor
                     radius: 12 * scaleFactor
-                    color: "#f6f8fa"
+                    color: "#ffffff"
                     border.color: dayComboBox.activeFocus || monthComboBox.activeFocus || yearComboBox.activeFocus ? "#3182ce" : "#d0d7de"
                     border.width: (dayComboBox.activeFocus || monthComboBox.activeFocus || yearComboBox.activeFocus) ? 2 * scaleFactor : 1 * scaleFactor
+
+                    layer.enabled: true
+                    layer.effect: DropShadow {
+                        transparentBorder: true
+                        color: "#20000000"
+                        radius: 8 * scaleFactor
+                        samples: 16
+                        horizontalOffset: 0
+                        verticalOffset: 2 * scaleFactor
+                    }
 
                     RowLayout {
                         anchors.fill: parent
@@ -203,16 +214,74 @@ Item {
                                 length: 31
                             }, (_, i) => ("0" + (i + 1)).slice(-2))
                             currentIndex: parseInt(formatDOB(AppState.dateOfBirth).day) - 1
+
                             background: Rectangle {
-                                color: "transparent"
+                                color: dayComboBox.hovered || dayComboBox.activeFocus ? "#f6f8fa" : "#ffffff"
+                                radius: 8 * scaleFactor
+                                border.color: dayComboBox.activeFocus ? "#3182ce" : "#e2e8f0"
+                                border.width: dayComboBox.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
                             }
+
                             contentItem: Text {
                                 text: dayComboBox.displayText
                                 font: dayComboBox.font
-                                color: "#2d3748"
+                                color: dayComboBox.activeFocus ? "#3182ce" : "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
+                                leftPadding: 10 * scaleFactor
                             }
+
+                            popup: Popup {
+                                y: dayComboBox.height // Position below the ComboBox
+                                width: dayComboBox.width
+                                height: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, dayComboBox.model.length * (formFieldFontSize + 10) * scaleFactor)
+                                padding: 1 * scaleFactor
+                                topMargin: 0 // Prevent upward positioning
+                                bottomMargin: 10 * scaleFactor // Ensure space below
+
+                                contentItem: ListView {
+                                    id: dayListView
+                                    clip: true
+                                    model: dayComboBox.delegateModel
+                                    currentIndex: dayComboBox.highlightedIndex
+                                    implicitHeight: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, contentHeight)
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    ScrollBar.vertical: ScrollBar {
+                                        active: true
+                                        visible: dayListView.contentHeight > dayListView.height
+                                    }
+                                }
+
+                                background: Rectangle {
+                                    color: "#ffffff"
+                                    radius: 8 * scaleFactor
+                                    border.color: "#d0d7de"
+                                    border.width: 1 * scaleFactor
+                                    layer.enabled: true
+                                    layer.effect: DropShadow {
+                                        transparentBorder: true
+                                        color: "#20000000"
+                                        radius: 8 * scaleFactor
+                                        samples: 16
+                                    }
+                                }
+                            }
+
+                            delegate: ItemDelegate {
+                                width: dayComboBox.width
+                                contentItem: Text {
+                                    text: modelData
+                                    color: dayComboBox.currentIndex === index ? "#3182ce" : "#2d3748"
+                                    font: dayComboBox.font
+                                    verticalAlignment: Text.AlignVCenter
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                                highlighted: dayComboBox.highlightedIndex === index
+                                background: Rectangle {
+                                    color: highlighted ? "#edf2f7" : "#ffffff"
+                                }
+                            }
+
                             onActivated: {
                                 console.log("Day selected:", displayText);
                             }
@@ -228,16 +297,74 @@ Item {
                                 length: 12
                             }, (_, i) => ("0" + (i + 1)).slice(-2))
                             currentIndex: parseInt(formatDOB(AppState.dateOfBirth).month) - 1
+
                             background: Rectangle {
-                                color: "transparent"
+                                color: monthComboBox.hovered || monthComboBox.activeFocus ? "#f6f8fa" : "#ffffff"
+                                radius: 8 * scaleFactor
+                                border.color: monthComboBox.activeFocus ? "#3182ce" : "#e2e8f0"
+                                border.width: monthComboBox.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
                             }
+
                             contentItem: Text {
                                 text: monthComboBox.displayText
                                 font: monthComboBox.font
-                                color: "#2d3748"
+                                color: monthComboBox.activeFocus ? "#3182ce" : "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
+                                leftPadding: 10 * scaleFactor
                             }
+
+                            popup: Popup {
+                                y: monthComboBox.height // Position below the ComboBox
+                                width: monthComboBox.width
+                                height: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, monthComboBox.model.length * (formFieldFontSize + 10) * scaleFactor)
+                                padding: 1 * scaleFactor
+                                topMargin: 0 // Prevent upward positioning
+                                bottomMargin: 10 * scaleFactor // Ensure space below
+
+                                contentItem: ListView {
+                                    id: monthListView
+                                    clip: true
+                                    model: monthComboBox.delegateModel
+                                    currentIndex: monthComboBox.highlightedIndex
+                                    implicitHeight: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, contentHeight)
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    ScrollBar.vertical: ScrollBar {
+                                        active: true
+                                        visible: monthListView.contentHeight > monthListView.height
+                                    }
+                                }
+
+                                background: Rectangle {
+                                    color: "#ffffff"
+                                    radius: 8 * scaleFactor
+                                    border.color: "#d0d7de"
+                                    border.width: 1 * scaleFactor
+                                    layer.enabled: true
+                                    layer.effect: DropShadow {
+                                        transparentBorder: true
+                                        color: "#20000000"
+                                        radius: 8 * scaleFactor
+                                        samples: 16
+                                    }
+                                }
+                            }
+
+                            delegate: ItemDelegate {
+                                width: monthComboBox.width
+                                contentItem: Text {
+                                    text: modelData
+                                    color: monthComboBox.currentIndex === index ? "#3182ce" : "#2d3748"
+                                    font: monthComboBox.font
+                                    verticalAlignment: Text.AlignVCenter
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                                highlighted: monthComboBox.highlightedIndex === index
+                                background: Rectangle {
+                                    color: highlighted ? "#edf2f7" : "#ffffff"
+                                }
+                            }
+
                             onActivated: {
                                 console.log("Month selected:", displayText);
                             }
@@ -253,16 +380,74 @@ Item {
                                 length: 100
                             }, (_, i) => (2025 - i).toString())
                             currentIndex: 2025 - parseInt(formatDOB(AppState.dateOfBirth).year)
+
                             background: Rectangle {
-                                color: "transparent"
+                                color: yearComboBox.hovered || yearComboBox.activeFocus ? "#f6f8fa" : "#ffffff"
+                                radius: 8 * scaleFactor
+                                border.color: yearComboBox.activeFocus ? "#3182ce" : "#e2e8f0"
+                                border.width: yearComboBox.activeFocus ? 2 * scaleFactor : 1 * scaleFactor
                             }
+
                             contentItem: Text {
                                 text: yearComboBox.displayText
                                 font: yearComboBox.font
-                                color: "#2d3748"
+                                color: yearComboBox.activeFocus ? "#3182ce" : "#2d3748"
                                 verticalAlignment: Text.AlignVCenter
                                 horizontalAlignment: Text.AlignHCenter
+                                leftPadding: 10 * scaleFactor
                             }
+
+                            popup: Popup {
+                                y: yearComboBox.height // Position below the ComboBox
+                                width: yearComboBox.width
+                                height: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, yearComboBox.model.length * (formFieldFontSize + 10) * scaleFactor)
+                                padding: 1 * scaleFactor
+                                topMargin: 0 // Prevent upward positioning
+                                bottomMargin: 10 * scaleFactor // Ensure space below
+
+                                contentItem: ListView {
+                                    id: yearListView
+                                    clip: true
+                                    model: yearComboBox.delegateModel
+                                    currentIndex: yearComboBox.highlightedIndex
+                                    implicitHeight: Math.min(10 * (formFieldFontSize + 10) * scaleFactor, contentHeight)
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    ScrollBar.vertical: ScrollBar {
+                                        active: true
+                                        visible: yearListView.contentHeight > yearListView.height
+                                    }
+                                }
+
+                                background: Rectangle {
+                                    color: "#ffffff"
+                                    radius: 8 * scaleFactor
+                                    border.color: "#d0d7de"
+                                    border.width: 1 * scaleFactor
+                                    layer.enabled: true
+                                    layer.effect: DropShadow {
+                                        transparentBorder: true
+                                        color: "#20000000"
+                                        radius: 8 * scaleFactor
+                                        samples: 16
+                                    }
+                                }
+                            }
+
+                            delegate: ItemDelegate {
+                                width: yearComboBox.width
+                                contentItem: Text {
+                                    text: modelData
+                                    color: yearComboBox.currentIndex === index ? "#3182ce" : "#2d3748"
+                                    font: yearComboBox.font
+                                    verticalAlignment: Text.AlignVCenter
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                                highlighted: yearComboBox.highlightedIndex === index
+                                background: Rectangle {
+                                    color: highlighted ? "#edf2f7" : "#ffffff"
+                                }
+                            }
+
                             onActivated: {
                                 console.log("Year selected:", displayText);
                             }
