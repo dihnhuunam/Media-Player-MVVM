@@ -51,32 +51,6 @@ Item {
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
     }
 
-    // FolderDialog {
-    //     id: folderDialog
-    //     title: "Select Media Files Directory"
-    //     onAccepted: {
-    //         let folderPath = folderDialog.currentFolder.toString().replace("file://", "");
-    //         console.log("FolderDialog::folderDialog - Selected Folder:", folderPath);
-    //         AppState.setState({
-    //             mediaFiles: [
-    //                 {
-    //                     title: "Folder Song 1",
-    //                     artist: "Unknown Artist",
-    //                     duration: 180000
-    //                 },
-    //                 {
-    //                     title: "Folder Song 2",
-    //                     artist: "Unknown Artist",
-    //                     duration: 180000
-    //                 }
-    //             ]
-    //         });
-    //     }
-    //     onRejected: {
-    //         console.log("FolderDialog::folderDialog - Folder Selection Canceled");
-    //     }
-    // }
-
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -102,24 +76,6 @@ Item {
                 Layout.fillWidth: true
                 Layout.topMargin: 35 * scaleFactor
                 spacing: topControlSpacing * scaleFactor
-
-                // HoverButton {
-                //     Layout.preferredWidth: topControlButtonSize * scaleFactor
-                //     Layout.preferredHeight: topControlButtonSize * scaleFactor
-                //     flat: true
-                //     onClicked: folderDialog.open()
-                //     background: Rectangle {
-                //         color: parent.hovered ? "#e6e9ec" : "transparent"
-                //         radius: 10 * scaleFactor
-                //     }
-                //     Image {
-                //         source: "qrc:/Assets/folder.png"
-                //         width: topControlIconSize * scaleFactor
-                //         height: topControlIconSize * scaleFactor
-                //         anchors.centerIn: parent
-                //         opacity: parent.hovered ? 1.0 : 0.8
-                //     }
-                // }
 
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
@@ -234,30 +190,61 @@ Item {
                     }
                 }
 
-                HoverButton {
-                    id: profileButton
+                Loader {
+                    id: authButtonLoader
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
-                    flat: true
-                    onClicked: profileMenu.open()
-                    background: Rectangle {
-                        color: parent.hovered ? "#e6e9ec" : "transparent"
-                        radius: 10 * scaleFactor
+                    sourceComponent: AppState.isAuthenticated ? profileButtonComponent : loginButtonComponent
+                }
+
+                Component {
+                    id: profileButtonComponent
+                    HoverButton {
+                        id: profileButton
+                        flat: true
+                        onClicked: profileMenu.open()
+                        background: Rectangle {
+                            color: parent.hovered ? "#e6e9ec" : "transparent"
+                            radius: 10 * scaleFactor
+                        }
+                        Image {
+                            source: "qrc:/Assets/profile.png"
+                            width: topControlIconSize * scaleFactor
+                            height: topControlIconSize * scaleFactor
+                            anchors.centerIn: parent
+                            opacity: parent.hovered ? 1.0 : 0.8
+                        }
                     }
-                    Image {
-                        source: "qrc:/Assets/profile.png"
-                        width: topControlIconSize * scaleFactor
-                        height: topControlIconSize * scaleFactor
-                        anchors.centerIn: parent
-                        opacity: parent.hovered ? 1.0 : 0.8
+                }
+
+                Component {
+                    id: loginButtonComponent
+                    HoverButton {
+                        flat: true
+                        onClicked: {
+                            NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
+                            console.log("Login button clicked, navigating to LoginView");
+                        }
+                        background: Rectangle {
+                            color: parent.hovered ? "#e6e9ec" : "transparent"
+                            radius: 10 * scaleFactor
+                        }
+                        Image {
+                            source: "qrc:/Assets/login.png"
+                            width: topControlIconSize * scaleFactor
+                            height: topControlIconSize * scaleFactor
+                            anchors.centerIn: parent
+                            opacity: parent.hovered ? 1.0 : 0.8
+                        }
                     }
                 }
 
                 Menu {
                     id: profileMenu
-                    x: profileButton.x
-                    y: profileButton.y + profileButton.height
+                    x: authButtonLoader.x
+                    y: authButtonLoader.y + authButtonLoader.height
                     width: 180 * scaleFactor
+                    visible: AppState.isAuthenticated
 
                     background: Rectangle {
                         color: "#ffffff"
@@ -285,24 +272,6 @@ Item {
                             console.log("View Details Account clicked, navigating to ProfileView");
                         }
                     }
-                    // MenuItem {
-                    //     text: "Setting"
-                    //     contentItem: Text {
-                    //         text: parent.text
-                    //         font.pixelSize: 16 * scaleFactor
-                    //         font.family: "Arial"
-                    //         color: "#2d3748"
-                    //         verticalAlignment: Text.AlignVCenter
-                    //         horizontalAlignment: Text.AlignLeft
-                    //         leftPadding: 10
-                    //     }
-                    //     background: Rectangle {
-                    //         color: parent.hovered ? "#f0f0f0" : "#ffffff"
-                    //     }
-                    //     onTriggered: {
-                    //         console.log("Setting clicked");
-                    //     }
-                    // }
                     MenuItem {
                         text: "Logout"
                         contentItem: Text {
@@ -318,8 +287,9 @@ Item {
                             color: parent.hovered ? "#f0f0f0" : "#ffffff"
                         }
                         onTriggered: {
+                            AppState.clearUserInfo();
                             NavigationManager.navigateTo("qrc:/Source/View/Authentication/LoginView.qml");
-                            console.log("Logout clicked, navigated to LoginView");
+                            console.log("Logout clicked, QSettings cleared and navigated to LoginView");
                         }
                     }
                 }
