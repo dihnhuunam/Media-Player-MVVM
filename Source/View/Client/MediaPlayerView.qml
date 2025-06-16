@@ -51,31 +51,31 @@ Item {
         return minutes + ":" + (secs < 10 ? "0" : "") + secs;
     }
 
-    FolderDialog {
-        id: folderDialog
-        title: "Select Media Files Directory"
-        onAccepted: {
-            let folderPath = folderDialog.currentFolder.toString().replace("file://", "");
-            console.log("FolderDialog::folderDialog - Selected Folder:", folderPath);
-            AppState.setState({
-                mediaFiles: [
-                    {
-                        title: "Folder Song 1",
-                        artist: "Unknown Artist",
-                        duration: 180000
-                    },
-                    {
-                        title: "Folder Song 2",
-                        artist: "Unknown Artist",
-                        duration: 180000
-                    }
-                ]
-            });
-        }
-        onRejected: {
-            console.log("FolderDialog::folderDialog - Folder Selection Canceled");
-        }
-    }
+    // FolderDialog {
+    //     id: folderDialog
+    //     title: "Select Media Files Directory"
+    //     onAccepted: {
+    //         let folderPath = folderDialog.currentFolder.toString().replace("file://", "");
+    //         console.log("FolderDialog::folderDialog - Selected Folder:", folderPath);
+    //         AppState.setState({
+    //             mediaFiles: [
+    //                 {
+    //                     title: "Folder Song 1",
+    //                     artist: "Unknown Artist",
+    //                     duration: 180000
+    //                 },
+    //                 {
+    //                     title: "Folder Song 2",
+    //                     artist: "Unknown Artist",
+    //                     duration: 180000
+    //                 }
+    //             ]
+    //         });
+    //     }
+    //     onRejected: {
+    //         console.log("FolderDialog::folderDialog - Folder Selection Canceled");
+    //     }
+    // }
 
     Rectangle {
         anchors.fill: parent
@@ -103,23 +103,23 @@ Item {
                 Layout.topMargin: 35 * scaleFactor
                 spacing: topControlSpacing * scaleFactor
 
-                HoverButton {
-                    Layout.preferredWidth: topControlButtonSize * scaleFactor
-                    Layout.preferredHeight: topControlButtonSize * scaleFactor
-                    flat: true
-                    onClicked: folderDialog.open()
-                    background: Rectangle {
-                        color: parent.hovered ? "#e6e9ec" : "transparent"
-                        radius: 10 * scaleFactor
-                    }
-                    Image {
-                        source: "qrc:/Assets/folder.png"
-                        width: topControlIconSize * scaleFactor
-                        height: topControlIconSize * scaleFactor
-                        anchors.centerIn: parent
-                        opacity: parent.hovered ? 1.0 : 0.8
-                    }
-                }
+                // HoverButton {
+                //     Layout.preferredWidth: topControlButtonSize * scaleFactor
+                //     Layout.preferredHeight: topControlButtonSize * scaleFactor
+                //     flat: true
+                //     onClicked: folderDialog.open()
+                //     background: Rectangle {
+                //         color: parent.hovered ? "#e6e9ec" : "transparent"
+                //         radius: 10 * scaleFactor
+                //     }
+                //     Image {
+                //         source: "qrc:/Assets/folder.png"
+                //         width: topControlIconSize * scaleFactor
+                //         height: topControlIconSize * scaleFactor
+                //         anchors.centerIn: parent
+                //         opacity: parent.hovered ? 1.0 : 0.8
+                //     }
+                // }
 
                 HoverButton {
                     Layout.preferredWidth: topControlButtonSize * scaleFactor
@@ -285,24 +285,24 @@ Item {
                             console.log("View Details Account clicked, navigating to ProfileView");
                         }
                     }
-                    MenuItem {
-                        text: "Setting"
-                        contentItem: Text {
-                            text: parent.text
-                            font.pixelSize: 16 * scaleFactor
-                            font.family: "Arial"
-                            color: "#2d3748"
-                            verticalAlignment: Text.AlignVCenter
-                            horizontalAlignment: Text.AlignLeft
-                            leftPadding: 10
-                        }
-                        background: Rectangle {
-                            color: parent.hovered ? "#f0f0f0" : "#ffffff"
-                        }
-                        onTriggered: {
-                            console.log("Setting clicked");
-                        }
-                    }
+                    // MenuItem {
+                    //     text: "Setting"
+                    //     contentItem: Text {
+                    //         text: parent.text
+                    //         font.pixelSize: 16 * scaleFactor
+                    //         font.family: "Arial"
+                    //         color: "#2d3748"
+                    //         verticalAlignment: Text.AlignVCenter
+                    //         horizontalAlignment: Text.AlignLeft
+                    //         leftPadding: 10
+                    //     }
+                    //     background: Rectangle {
+                    //         color: parent.hovered ? "#f0f0f0" : "#ffffff"
+                    //     }
+                    //     onTriggered: {
+                    //         console.log("Setting clicked");
+                    //     }
+                    // }
                     MenuItem {
                         text: "Logout"
                         contentItem: Text {
