@@ -1,161 +1,171 @@
 # Media Player MVVM
 
-A modern media player application built with Qt Quick/QML and C++ following the MVVM (Model-View-ViewModel) architecture pattern.
+A modern, feature-rich media player application built with **Qt Quick/QML** and **C++** using the **MVVM (Model-View-ViewModel)** architecture. This application supports media playback, playlist management, user authentication, and admin functionalities, with a responsive and intuitive user interface.
+
+## Table of Contents
+
+- [Features](#features)
+- [System Requirements](#system-requirements)
+- [Project Structure](#project-structure)
+- [Building and Running](#building-and-running)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+### User Features
+
+- **Media Playback**:
+  - Play, pause, stop, next/previous track controls.
+  - Volume control with mute option.
+  - Seek functionality for precise navigation.
+  - Repeat modes (single track or entire playlist) and shuffle mode.
+- **Playlist Management**:
+  - Create, edit, and delete playlists.
+  - Add, remove, and reorder tracks.
+  - View detailed playlist information.
+- **Profile Management**:
+  - View and edit user profiles.
+  - Customize player settings (e.g., theme, playback preferences).
+  - Access playback history.
+
+### Admin Features
+
+- **User Management**:
+  - View all registered users.
+  - Assign or modify user roles (admin/user).
+  - Enable or disable user accounts.
+- **Media Management**:
+  - Upload new media files.
+  - Edit media metadata (e.g., title, artist, album).
+  - Remove media files.
+  - Manage file access permissions.
+
+### Technical Features
+
+- Modern, responsive UI built with **Qt Quick/QML**.
+- **MVVM architecture** for clear separation of concerns.
+- Efficient media handling using **Qt Multimedia**.
+- Persistent storage for user data and playlists.
+- Event-driven architecture for smooth interactions.
+- Role-based access control for secure user/admin operations.
 
 ## System Requirements
 
 ### Build Requirements
 
-- Qt 6.8.2 or higher
-- CMake 3.16 or higher
-- C++17 compatible compiler
-- Qt Quick and Qt Multimedia modules
+- **Qt**: Version 6.8.2 or higher.
+- **CMake**: Version 3.16 or higher.
+- **Compiler**: C++17 compatible (e.g., GCC, Clang).
+- **Qt Modules**: Qt Quick, Qt Multimedia.
 
 ### Runtime Requirements
 
-- Operating System: Linux (Primary support)
-- Minimum RAM: 4GB
-- Storage: 100MB free space
-- Graphics: OpenGL 2.0 compatible graphics card
-- Audio: Working sound card/audio device
+- **Operating System**: Linux (primary support; other platforms may require additional configuration).
+- **RAM**: Minimum 4GB.
+- **Storage**: 100MB free space.
+- **Graphics**: OpenGL 2.0 compatible graphics card.
+- **Audio**: Working sound card or audio device.
 
 ## Project Structure
 
-The project follows the MVVM architecture pattern with a clear separation of concerns. Below is the detailed structure based on the source files:
+The project follows the **MVVM** architecture with a modular and organized structure:
 
 ```
 Media-Player-MVVM/
-├── Source/                               # Source code root
+├── Assets/                               # Application resources (e.g., images, icons)
+├── Source/                               # Source code
 │   ├── Model/                            # Data models and business logic
-│   │   ├── CMakeLists.txt                # Build configuration for models
-│   │   ├── PlaylistModel.cpp             # Playlist management logic
-│   │   ├── PlaylistModel.hpp             # Playlist model header
-│   │   ├── SongModel.cpp                 # Media file handling logic
-│   │   └── SongModel.hpp                 # Song model header
-│   ├── View/                             # QML UI files
-│   │   ├── Admin/                        # Admin interface views
-│   │   │   ├── AdminDashboard.qml        # Admin dashboard UI
-│   │   │   ├── AdminMediaFilesView.qml   # View for managing media files
-│   │   │   └── AdminUploadFile.qml       # UI for uploading media files
-│   │   ├── Authentication/               # Login/Register views
-│   │   │   ├── LoginView.qml             # Login UI
-│   │   │   └── RegisterView.qml          # Registration UI
-│   │   ├── Client/                       # Main player interface
-│   │   │   ├── MediaFileView.qml         # Media file browsing UI
-│   │   │   ├── MediaPlayerView.qml       # Media player UI
-│   │   │   ├── PlaylistView.qml          # Playlist viewing UI
-│   │   │   └── ProfileView.qml           # User profile UI
-│   │   ├── Components/                   # Reusable UI components
+│   │   ├── PlaylistModel.cpp/hpp         # Playlist management logic
+│   │   ├── SongModel.cpp/hpp             # Media file handling logic
+│   │   └── CMakeLists.txt                # Model build configuration
+│   ├── View/                             # QML-based UI
+│   │   ├── Admin/                        # Admin views
+│   │   │   ├── AdminDashboard.qml        # Admin dashboard
+│   │   │   ├── AdminMediaFilesView.qml   # Media file management
+│   │   │   └── AdminUploadFile.qml       # File upload interface
+│   │   ├── Authentication/               # Authentication views
+│   │   │   ├── LoginView.qml             # Login interface
+│   │   │   └── RegisterView.qml          # Registration interface
+│   │   ├── Client/                       # User interface
+│   │   │   ├── MediaFileView.qml         # Media browsing
+│   │   │   ├── MediaPlayerView.qml       # Media playback
+│   │   │   ├── PlaylistView.qml          # Playlist viewing
+│   │   │   └── ProfileView.qml           # User profile
+│   │   ├── Components/                   # Reusable QML components
 │   │   │   ├── HoverButton.qml           # Custom button with hover effect
-│   │   │   └── SliderComponent.qml       # Custom slider for media seeking/volume
-│   │   └── Helper/                       # UI utilities
-│   │       ├── NavigationManager.qml     # Navigation logic for UI
-│   │       └── Main.qml                  # Main QML entry point
+│   │   │   └── SliderComponent.qml       # Slider for seeking/volume
+│   │   ├── Helper/                       # UI utilities
+│   │   │   ├── Main.qml                  # Main QML entry point
+│   │   │   └── NavigationManager.qml     # Navigation logic
 │   └── ViewModel/                        # ViewModels connecting Models and Views
-│       ├── AdminViewModel.cpp            # Admin ViewModel
-│       ├── AdminViewModel.hpp            # Admin ViewModel header
-│       ├── AuthViewModel.cpp             # Authentication ViewModel
-│       ├── AuthViewModel.hpp             # Authentication ViewModel header
-│       ├── CMakeLists.txt                # Build configuration for ViewModels
-│       ├── PlaylistViewModel.cpp         # Playlist ViewModel
-│       ├── PlaylistViewModel.hpp         # Playlist ViewModel header
-│       ├── SongViewModel.cpp             # Song ViewModel
-│       └── SongViewModel.hpp             # Song ViewModel header
-├── Assets/                               # Application resources
+│       ├── AdminViewModel.cpp/hpp        # Admin logic
+│       ├── AuthViewModel.cpp/hpp         # Authentication logic
+│       ├── PlaylistViewModel.cpp/hpp     # Playlist logic
+│       ├── SongViewModel.cpp/hpp         # Media file logic
+│       └── CMakeLists.txt                # ViewModel build configuration
 └── CMakeLists.txt                        # Root build configuration
 ```
 
-### Notes on Structure:
+### Key Components
 
-- **Model/**: Contains the data models (`PlaylistModel` and `SongModel`) with their respective C++ source and header files, along with a `CMakeLists.txt` for building the model layer.
-- **View/**: Organized into subdirectories for different UI sections:
-  - `Admin/` for admin-specific views like dashboards and media management.
-  - `Authentication/` for login and registration UIs.
-  - `Client/` for the main user interface, including media playback and playlist management.
-  - `Components/` for reusable QML components like buttons and sliders.
-  - `Helper/` for utility QML files, including the main entry point (`Main.qml`) and navigation logic.
-- **ViewModel/**: Contains the ViewModels that connect the Models to the Views, with separate C++ files for admin, authentication, playlist, and song functionalities.
-- The root `CMakeLists.txt` manages the overall build configuration.
-
-## Features and Usage
-
-### Authentication
-
-- User registration with email and password
-- Secure login system
-- Role-based access control (Admin/User)
-
-### User Features
-
-- Media Playback
-
-  - Play/Pause/Stop controls
-  - Next/Previous track navigation
-  - Volume control with mute option
-  - Seek functionality
-  - Repeat modes (Single/All)
-  - Shuffle mode
-
-- Playlist Management
-
-  - Create and manage multiple playlists
-  - Add/Remove tracks
-  - Reorder tracks
-  - View playlist details
-
-- Profile Management
-  - View and edit user profile
-  - Customize player settings
-  - View playback history
-
-### Admin Features
-
-- User Management
-
-  - View all users
-  - Manage user roles
-  - Disable/Enable accounts
-
-- Media Management
-  - Upload new media files
-  - Edit media metadata
-  - Remove media files
-  - Manage file access permissions
-
-### Technical Features
-
-- Modern QML/Qt Quick UI
-- MVVM Architecture
-- Responsive design
-- Efficient media handling
-- Persistent storage
-- Event-driven architecture
+- **Model**: Handles data and business logic (`PlaylistModel`, `SongModel`).
+- **View**: QML files for UI, organized by user roles and functionalities.
+- **ViewModel**: C++ classes that connect Models to Views, managing application logic.
+- **Assets**: Stores resources like images and icons.
 
 ## Building and Running
 
-1. Clone the repository:
+1. **Clone the Repository**:
 
-```bash
-git clone https://github.com/dihnhuunam/Media-Player-MVVM.git
-cd Media-Player-MVVM
-```
+   ```bash
+   git clone https://github.com/dihnhuunam/Media-Player-MVVM.git
+   cd Media-Player-MVVM
+   ```
 
-2. Create build directory:
+2. **Create a Build Directory**:
 
-```bash
-mkdir build
-cd build
-```
+   ```bash
+   mkdir build
+   cd build
+   ```
 
-3. Configure and build:
+3. **Configure and Build**:
 
-```bash
-cmake ..
-make
-```
+   ```bash
+   cmake ..
+   make
+   ```
 
-4. Run the application:
+4. **Run the Application**:
+   ```bash
+   ./MediaPlayer
+   ```
 
-```bash
-./MediaPlayer
-```
+### Notes
+
+- Ensure **Qt 6.8.2+** and **CMake 3.16+** are installed.
+- On non-Linux systems, additional configuration may be required for Qt and CMake.
+- Verify that your system meets the runtime requirements (e.g., OpenGL, audio device).
+
+## Usage
+
+1. **Launch the Application**:
+   Run `./MediaPlayer` from the build directory.
+
+2. **Authentication**:
+
+   - Register a new account or log in with existing credentials.
+   - Admin accounts have access to user and media management features.
+
+3. **User Interface**:
+
+   - Browse and play media files.
+   - Create and manage playlists.
+   - Customize your profile and settings.
+
+4. **Admin Interface**:
+   - Access the admin dashboard to manage users and media.
+   - Upload new media files or edit existing ones.
+   - Control user roles and permissions.
