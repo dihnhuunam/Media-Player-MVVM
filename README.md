@@ -9,8 +9,6 @@ A modern, feature-rich media player application built with **Qt Quick/QML** and 
 - [Project Structure](#project-structure)
 - [Building and Running](#building-and-running)
 - [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 
