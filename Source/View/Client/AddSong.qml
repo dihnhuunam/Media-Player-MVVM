@@ -16,6 +16,7 @@ Item {
     property real topControlSearchFontSize: 22
     property real topControlSpacing: 30
     property real topControlMargin: 18
+    property real rightControlMargin: 40
     property real topControlTopMargin: 20
 
     property real playlistItemHeight: 50
@@ -81,6 +82,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: topControlSearchHeight * scaleFactor
+                    Layout.rightMargin: rightControlMargin * scaleFactor
                     radius: topControlSearchRadius * scaleFactor
                     color: "#f6f8fa"
                     border.color: searchInput.activeFocus ? "#3182ce" : "#d0d7de"
@@ -221,7 +223,7 @@ Item {
                                 width: topControlIconSize * scaleFactor * 0.6
                                 height: topControlIconSize * scaleFactor * 0.6
                                 anchors.centerIn: parent
-                                opacity: client.hovered ? 1.0 : 0.8
+                                opacity: parent.hovered ? 1.0 : 0.8
                             }
                         }
                     }

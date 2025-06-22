@@ -128,7 +128,7 @@ Item {
                     Layout.preferredHeight: topControlButtonSize * scaleFactor
                     onClicked: {
                         console.log("Add song button clicked, navigating to AddSongView");
-                        NavigationManager.navigateTo("qrc:/Songs/View/Client/AddSong.qml");
+                        NavigationManager.navigateTo("qrc:/Source/View/Client/AddSong.qml");
                     }
                     Image {
                         source: "qrc:/Assets/add.png"
