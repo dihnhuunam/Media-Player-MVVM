@@ -556,7 +556,7 @@ Item {
                         source: "qrc:/Assets/shuffle.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: songViewModel.shuffle ? 1.0 : 0.8
+                        opacity: songViewModel.shuffle ? 1.0 : 0.2
                     }
                 }
 
@@ -648,7 +648,7 @@ Item {
                         source: songViewModel.repeatMode === 1 ? "qrc:/Assets/repeat-one.png" : "qrc:/Assets/repeat.png"
                         width: controlIconSize * scaleFactor
                         height: controlIconSize * scaleFactor
-                        opacity: songViewModel.repeatMode > 0 ? 1.0 : 0.8
+                        opacity: songViewModel.repeatMode > 0 ? 1.0 : 0.2
                     }
                 }
             }
