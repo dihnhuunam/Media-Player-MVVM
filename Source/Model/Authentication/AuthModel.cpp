@@ -17,6 +17,12 @@ AuthModel::AuthModel(QObject *parent)
 
 void AuthModel::loginUser(const QString &email, const QString &password)
 {
+    if (email.isEmpty() || password.isEmpty())
+    {
+        emit loginResult(false, "Email and password are required");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getAuthLoginEndpoint());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -36,6 +42,12 @@ void AuthModel::loginUser(const QString &email, const QString &password)
 
 void AuthModel::registerUser(const QString &email, const QString &password, const QString &name, const QString &dob)
 {
+    if (email.isEmpty() || password.isEmpty() || name.isEmpty() || dob.isEmpty())
+    {
+        emit registerResult(false, "Email, password, name, and date of birth are required");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getAuthRegisterEndpoint());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -58,8 +70,8 @@ void AuthModel::registerUser(const QString &email, const QString &password, cons
         }
         else
         {
-            qDebug() << "Invalid date format for dob in register:" << dob;
-            formattedDob = "";
+            emit registerResult(false, "Invalid dateOfBirth format");
+            return;
         }
     }
     json["dateOfBirth"] = formattedDob;
@@ -75,6 +87,12 @@ void AuthModel::registerUser(const QString &email, const QString &password, cons
 
 void AuthModel::updateProfile(int userId, const QString &name, const QString &dob, const QString &currentPassword, const QString &newPassword)
 {
+    if (userId <= 0)
+    {
+        emit profileUpdateResult(false, "Invalid user ID");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getAuthUpdateEndpoint(userId));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -105,13 +123,13 @@ void AuthModel::updateProfile(int userId, const QString &name, const QString &do
         }
         else
         {
-            qDebug() << "Invalid date format for dob in updateProfile:" << dob;
+            emit profileUpdateResult(false, "Invalid dateOfBirth format");
+            return;
         }
     }
 
     if (!currentPassword.isEmpty() && !newPassword.isEmpty())
     {
-        json["currentPassword"] = currentPassword;
         json["password"] = newPassword;
         hasData = true;
     }
@@ -142,7 +160,10 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin, bool isUp
     bool success = false;
     QString message;
 
-    if (reply->error() == QNetworkReply::NoError)
+    // Check HTTP status code
+    int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
+    if (reply->error() == QNetworkReply::NoError && (httpStatus >= 200 && httpStatus < 300))
     {
         QByteArray responseData = reply->readAll();
         QJsonDocument doc = QJsonDocument::fromJson(responseData);
@@ -150,11 +171,12 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin, bool isUp
         {
             QJsonObject obj = doc.object();
             message = obj["message"].toString();
-            if (isLogin)
+            success = !message.contains("error", Qt::CaseInsensitive);
+
+            if (isLogin && success)
             {
                 if (obj.contains("token") && obj.contains("user"))
                 {
-                    success = true;
                     QString token = obj["token"].toString();
                     QJsonObject user = obj["user"].toObject();
                     saveToken(token);
@@ -163,30 +185,75 @@ void AuthModel::handleNetworkReply(QNetworkReply *reply, bool isLogin, bool isUp
                 else
                 {
                     success = false;
+                    message = "Invalid login response from server";
                 }
             }
-            else if (isUpdate)
+            else if (isUpdate && success)
             {
-                success = !message.contains("error", Qt::CaseInsensitive);
-                if (success && obj.contains("user"))
+                if (obj.contains("user"))
                 {
                     QJsonObject user = obj["user"].toObject();
                     saveUserInfo(user);
                 }
             }
-            else
-            {
-                success = !message.contains("error", Qt::CaseInsensitive);
-            }
         }
         else
         {
+            success = false;
             message = "Invalid response from server";
         }
     }
     else
     {
-        message = reply->errorString();
+        // Handle specific HTTP status codes
+        QByteArray responseData = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(responseData);
+        if (!doc.isNull() && doc.isObject())
+        {
+            QJsonObject obj = doc.object();
+            message = obj["message"].toString();
+            if (message.isEmpty())
+            {
+                message = reply->errorString();
+            }
+        }
+        else
+        {
+            message = reply->errorString();
+        }
+
+        // Map HTTP status codes to specific messages if backend doesn't provide one
+        switch (httpStatus)
+        {
+        case 400:
+            if (message.isEmpty())
+                message = "Bad request: Invalid input data";
+            break;
+        case 401:
+            if (message.isEmpty())
+                message = "Unauthorized: Invalid credentials";
+            break;
+        case 403:
+            if (message.isEmpty())
+                message = "Forbidden: Insufficient permissions";
+            break;
+        case 404:
+            if (message.isEmpty())
+                message = "Resource not found";
+            break;
+        case 409:
+            if (message.isEmpty())
+                message = "Conflict: Resource already exists";
+            break;
+        case 500:
+            if (message.isEmpty())
+                message = "Internal server error";
+            break;
+        default:
+            if (message.isEmpty())
+                message = "Unknown error occurred";
+            break;
+        }
     }
 
     if (isLogin)

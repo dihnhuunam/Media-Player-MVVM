@@ -162,6 +162,11 @@ void PlaylistModel::updatePageSongs()
 
 void PlaylistModel::loadUserPlaylists()
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to load playlists");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -177,6 +182,16 @@ void PlaylistModel::loadUserPlaylists()
 
 void PlaylistModel::createPlaylist(const QString &name)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to create a playlist");
+        return;
+    }
+    if (name.trimmed().isEmpty())
+    {
+        emit errorOccurred("Playlist name is required");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -199,6 +214,16 @@ void PlaylistModel::createPlaylist(const QString &name)
 
 void PlaylistModel::updatePlaylist(int playlistId, const QString &name)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to update a playlist");
+        return;
+    }
+    if (name.trimmed().isEmpty())
+    {
+        emit errorOccurred("Playlist name is required");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -221,6 +246,16 @@ void PlaylistModel::updatePlaylist(int playlistId, const QString &name)
 
 void PlaylistModel::deletePlaylist(int playlistId)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to delete a playlist");
+        return;
+    }
+    if (playlistId <= 0)
+    {
+        emit errorOccurred("Invalid playlist ID");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -237,6 +272,16 @@ void PlaylistModel::deletePlaylist(int playlistId)
 
 void PlaylistModel::addSongToPlaylist(int playlistId, int songId)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to add a song to a playlist");
+        return;
+    }
+    if (playlistId <= 0 || songId <= 0)
+    {
+        emit errorOccurred("Playlist ID and song ID are required");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -260,6 +305,16 @@ void PlaylistModel::addSongToPlaylist(int playlistId, int songId)
 
 void PlaylistModel::removeSongFromPlaylist(int playlistId, int songId)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to remove a song from a playlist");
+        return;
+    }
+    if (playlistId <= 0 || songId <= 0)
+    {
+        emit errorOccurred("Playlist ID and song ID are required");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -283,6 +338,16 @@ void PlaylistModel::removeSongFromPlaylist(int playlistId, int songId)
 
 void PlaylistModel::loadSongsInPlaylist(int playlistId)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to load songs in a playlist");
+        return;
+    }
+    if (playlistId <= 0)
+    {
+        emit errorOccurred("Invalid playlist ID");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -299,6 +364,21 @@ void PlaylistModel::loadSongsInPlaylist(int playlistId)
 
 void PlaylistModel::search(const QString &query, int limit, int offset)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to search for playlists");
+        return;
+    }
+    if (query.trimmed().isEmpty())
+    {
+        emit errorOccurred("Query parameter 'q' is required");
+        return;
+    }
+    if (limit <= 0 || offset < 0)
+    {
+        emit errorOccurred("Invalid limit or offset values");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -321,6 +401,26 @@ void PlaylistModel::search(const QString &query, int limit, int offset)
 
 void PlaylistModel::searchSongsInPlaylist(int playlistId, const QString &query, int limit, int offset)
 {
+    if (!isAuthenticated())
+    {
+        emit errorOccurred("Please log in to search for songs in a playlist");
+        return;
+    }
+    if (playlistId <= 0)
+    {
+        emit errorOccurred("Invalid playlist ID");
+        return;
+    }
+    if (query.trimmed().isEmpty())
+    {
+        emit errorOccurred("Query parameter 'q' is required");
+        return;
+    }
+    if (limit <= 0 || offset < 0)
+    {
+        emit errorOccurred("Invalid limit or offset values");
+        return;
+    }
     m_isLoading = true;
     emit isLoadingChanged();
 
@@ -346,9 +446,13 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
     if (!reply)
         return;
 
+    m_isLoading = false;
+    emit isLoadingChanged();
+
     QString endpoint = reply->url().path();
+    int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     QString message;
-    bool success = (reply->error() == QNetworkReply::NoError);
+    bool success = (reply->error() == QNetworkReply::NoError && httpStatus >= 200 && httpStatus < 300);
 
     if (success)
     {
@@ -366,7 +470,9 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
                     QJsonObject obj = value.toObject();
                     PlaylistData playlist;
                     playlist.id = obj["id"].toInt();
-                    playlist.name = obj["name"].toString();
+                    playlist.name = obj["name"].toString().trimmed();
+                    if (playlist.name.isEmpty())
+                        playlist.name = "Unnamed Playlist";
                     playlist.songs.clear();
                     playlist.imageUrl = obj["imageUrl"].toString("");
                     playlist.userId = obj["userId"].toInt(0);
@@ -475,73 +581,79 @@ void PlaylistModel::handleNetworkReply(QNetworkReply *reply, int playlistId, int
             }
             else if (endpoint.endsWith("/playlists/songs") && reply->operation() == QNetworkAccessManager::PostOperation)
             {
-                int playlistId = jsonObj["playlistId"].toInt();
                 emit songAdded(playlistId);
             }
             else if (endpoint.endsWith("/playlists/songs") && reply->operation() == QNetworkAccessManager::CustomOperation)
             {
-                if (message == "Song removed from playlist successfully")
+                emit songRemoved(playlistId, songId);
+                for (int i = 0; i < m_currentSongs.count(); ++i)
                 {
-                    emit songRemoved(playlistId, songId);
-                    for (int i = 0; i < m_currentSongs.count(); ++i)
+                    if (m_currentSongs[i].id == songId)
                     {
-                        if (m_currentSongs[i].id == songId)
-                        {
-                            m_currentSongs.removeAt(i);
-                            break;
-                        }
+                        m_currentSongs.removeAt(i);
+                        break;
                     }
-                    m_totalPages = m_currentSongs.count() > 0 ? (m_currentSongs.count() + m_itemsPerPage - 1) / m_itemsPerPage : 0;
-                    if (m_currentPage >= m_totalPages && m_totalPages > 0)
-                        m_currentPage = m_totalPages - 1;
-                    else if (m_totalPages == 0)
-                        m_currentPage = 0;
-                    updatePageSongs();
-                    emit totalPagesChanged();
-                    emit currentPageChanged();
                 }
-                else
-                {
-                    success = false;
-                    message = "Unexpected response: " + message;
-                }
+                m_totalPages = m_currentSongs.count() > 0 ? (m_currentSongs.count() + m_itemsPerPage - 1) / m_itemsPerPage : 0;
+                if (m_currentPage >= m_totalPages && m_totalPages > 0)
+                    m_currentPage = m_totalPages - 1;
+                else if (m_totalPages == 0)
+                    m_currentPage = 0;
+                updatePageSongs();
+                emit totalPagesChanged();
+                emit currentPageChanged();
+            }
+            else
+            {
+                success = false;
+                message = message.isEmpty() ? "Unexpected response from server" : message;
+                emit errorOccurred(message);
             }
         }
         else
         {
             success = false;
             message = "Invalid response format from server";
+            emit errorOccurred(message);
         }
     }
     else
     {
-        int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        if (doc.isObject())
+        QByteArray responseData = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(responseData);
+        if (!doc.isNull() && doc.isObject())
+        {
             message = doc.object()["message"].toString();
-        else
+        }
+        if (message.isEmpty())
             message = reply->errorString();
 
-        if (httpStatus == 400)
+        switch (httpStatus)
+        {
+        case 400:
             message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
-        else if (httpStatus == 401)
-            message = message.isEmpty() ? "Unauthorized: Invalid or expired token" : message;
-        else if (httpStatus == 403)
+            break;
+        case 401:
+            message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+            break;
+        case 403:
             message = message.isEmpty() ? "Forbidden: Insufficient permissions" : message;
-        else if (httpStatus == 404)
+            break;
+        case 404:
             message = message.isEmpty() ? "Not found: Resource does not exist" : message;
-        else if (httpStatus == 409)
-            message = message.isEmpty() ? "Song is already in the playlist" : message;
-        else
+            break;
+        case 409:
+            message = message.isEmpty() ? "Song already exists in playlist" : message;
+            break;
+        case 500:
+            message = message.isEmpty() ? "Internal server error" : message;
+            break;
+        default:
             message = message.isEmpty() ? "An error occurred" : message;
-
+            break;
+        }
         emit errorOccurred(message);
     }
 
-    if (!success)
-        emit errorOccurred(message);
-
-    m_isLoading = false;
-    emit isLoadingChanged();
     reply->deleteLater();
 }

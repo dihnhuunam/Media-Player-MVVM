@@ -18,6 +18,12 @@ AdminModel::AdminModel(QObject *parent)
 
 void AdminModel::uploadSong(const QString &title, const QString &genres, const QString &artists, const QString &filePath)
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit uploadFinished(false, "Please log in to upload a song");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getSongsEndpoint());
     QNetworkRequest request(url);
 
@@ -104,7 +110,7 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
         }
         else
         {
-            emit uploadFinished(false, "Unsupported file format: " + extension);
+            emit uploadFinished(false, "Only mp3, wav, and m4a files are allowed");
             delete file;
             delete multiPart;
             return;
@@ -121,34 +127,80 @@ void AdminModel::uploadSong(const QString &title, const QString &genres, const Q
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-        qDebug() << "AdminModel: HTTP Status:" << statusCode << "Response:" << responseData;
+        qDebug() << "AdminModel: Upload song HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 201)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isObject())
             {
                 QJsonObject obj = doc.object();
-                QString message = obj.value("message").toString("Song added successfully");
+                message = obj.value("message").toString("Song added successfully");
                 int songId = obj.value("songId").toInt(-1);
                 emit uploadFinished(true, message, songId);
             }
             else
             {
-                emit uploadFinished(false, "Invalid response format from server: " + responseData);
+                emit uploadFinished(false, "Invalid response format from server");
             }
         }
         else
         {
-            emit uploadFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 409:
+                message = message.isEmpty() ? "Song title already exists" : message;
+                break;
+            case 416:
+                message = message.isEmpty() ? "Requested range not satisfiable" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while uploading song" : message;
+                break;
+            }
+            emit uploadFinished(false, message);
         }
         reply->deleteLater(); });
 }
 
 void AdminModel::updateSong(int songId, const QString &title, const QString &genres, const QString &artists)
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit updateFinished(false, "Please log in to update a song");
+        return;
+    }
+
+    if (songId <= 0)
+    {
+        emit updateFinished(false, "Invalid song ID");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getSongsUpdateEndpoint(songId));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -197,32 +249,78 @@ void AdminModel::updateSong(int songId, const QString &title, const QString &gen
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: Update song HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 200)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isObject())
             {
-                QString message = doc.object().value("message").toString("Song updated successfully");
+                message = doc.object().value("message").toString("Song updated successfully");
                 emit updateFinished(true, message);
             }
             else
             {
-                emit updateFinished(false, "Invalid response format from server: " + responseData);
+                emit updateFinished(false, "Invalid response format from server");
             }
         }
         else
         {
-            emit updateFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 404:
+                message = message.isEmpty() ? "Song not found" : message;
+                break;
+            case 409:
+                message = message.isEmpty() ? "Song title already exists" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while updating song" : message;
+                break;
+            }
+            emit updateFinished(false, message);
         }
         reply->deleteLater(); });
 }
 
 void AdminModel::deleteSong(int songId)
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit deleteFinished(false, "Please log in to delete a song");
+        return;
+    }
+
+    if (songId <= 0)
+    {
+        emit deleteFinished(false, "Invalid song ID");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getSongsDeleteEndpoint(songId));
     QNetworkRequest request(url);
 
@@ -238,32 +336,75 @@ void AdminModel::deleteSong(int songId)
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: Delete song HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 200)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isObject())
             {
-                QString message = doc.object().value("message").toString("Song deleted successfully");
+                message = doc.object().value("message").toString("Song deleted successfully");
                 emit deleteFinished(true, message);
             }
             else
             {
-                emit deleteFinished(false, "Invalid response format from server: " + responseData);
+                emit deleteFinished(false, "Invalid response format from server");
             }
         }
         else
         {
-            emit deleteFinished(false, QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 404:
+                message = message.isEmpty() ? "Song not found" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while deleting song" : message;
+                break;
+            }
+            emit deleteFinished(false, message);
         }
         reply->deleteLater(); });
 }
 
 void AdminModel::fetchSongById(int songId)
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit songFetched(false, "", "", "", "Please log in to fetch song details");
+        return;
+    }
+
+    if (songId <= 0)
+    {
+        emit songFetched(false, "", "", "", "Invalid song ID");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getSongByIdEndpoint(songId));
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -281,13 +422,14 @@ void AdminModel::fetchSongById(int songId)
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: Fetch song HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 200)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isObject())
             {
                 QJsonObject obj = doc.object();
@@ -312,18 +454,54 @@ void AdminModel::fetchSongById(int songId)
             }
             else
             {
-                emit songFetched(false, "", "", "", "Invalid response format from server: " + responseData);
+                emit songFetched(false, "", "", "", "Invalid response format from server");
             }
         }
         else
         {
-            emit songFetched(false, "", "", "", QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 404:
+                message = message.isEmpty() ? "Song not found" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while fetching song" : message;
+                break;
+            }
+            emit songFetched(false, "", "", "", message);
         }
         reply->deleteLater(); });
 }
 
 void AdminModel::fetchAllUsers()
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit usersFetched(false, QVariantList(), "Please log in to fetch users");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getAuthGetUsersEndpoint());
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -341,13 +519,14 @@ void AdminModel::fetchAllUsers()
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: Fetch users HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 200)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isArray())
             {
                 QVariantList users;
@@ -368,18 +547,60 @@ void AdminModel::fetchAllUsers()
             }
             else
             {
-                emit usersFetched(false, QVariantList(), "Invalid response format from server: " + responseData);
+                emit usersFetched(false, QVariantList(), "Invalid response format from server");
             }
         }
         else
         {
-            emit usersFetched(false, QVariantList(), QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid parameters" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 404:
+                message = message.isEmpty() ? "No users found" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while fetching users" : message;
+                break;
+            }
+            emit usersFetched(false, QVariantList(), message);
         }
         reply->deleteLater(); });
 }
 
 void AdminModel::searchUsersByName(const QString &name)
 {
+    if (!AppState::instance()->isAuthenticated())
+    {
+        emit usersFetched(false, QVariantList(), "Please log in to search for users");
+        return;
+    }
+
+    if (name.trimmed().isEmpty())
+    {
+        emit usersFetched(false, QVariantList(), "Query parameter 'name' is required");
+        return;
+    }
+
     QUrl url(AppConfig::instance().getAuthSearchUsersByNameEndpoint());
     QUrlQuery query;
     query.addQueryItem("name", name);
@@ -400,13 +621,14 @@ void AdminModel::searchUsersByName(const QString &name)
 
     connect(reply, &QNetworkReply::finished, this, [=]()
             {
-        QString responseData = QString::fromUtf8(reply->readAll());
+        QByteArray responseData = reply->readAll();
         int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         qDebug() << "AdminModel: Search users HTTP Status:" << statusCode << "Response:" << responseData;
 
+        QString message;
         if (reply->error() == QNetworkReply::NoError && statusCode == 200)
         {
-            QJsonDocument doc = QJsonDocument::fromJson(responseData.toUtf8());
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
             if (!doc.isNull() && doc.isArray())
             {
                 QVariantList users;
@@ -423,16 +645,47 @@ void AdminModel::searchUsersByName(const QString &name)
                     user["created_at"] = obj.value("created_at").toString();
                     users.append(user);
                 }
-                emit usersFetched(true, users, "");
+                message = users.isEmpty() ? "No users found" : "Users loaded successfully";
+                emit usersFetched(true, users, message);
             }
             else
             {
-                emit usersFetched(false, QVariantList(), "Invalid response format from server: " + responseData);
+                emit usersFetched(false, QVariantList(), "Invalid response format from server");
             }
         }
         else
         {
-            emit usersFetched(false, QVariantList(), QString("Error %1: %2 - Response: %3").arg(statusCode).arg(reply->errorString(), responseData));
+            QJsonDocument doc = QJsonDocument::fromJson(responseData);
+            if (!doc.isNull() && doc.isObject())
+            {
+                message = doc.object()["message"].toString();
+            }
+            if (message.isEmpty())
+                message = reply->errorString();
+
+            switch (statusCode)
+            {
+            case 400:
+                message = message.isEmpty() ? "Bad request: Invalid search query" : message;
+                break;
+            case 401:
+                message = message.isEmpty() ? "Unauthorized: Please log in" : message;
+                AppState::instance()->clearUserInfo();
+                break;
+            case 403:
+                message = message.isEmpty() ? "Forbidden: Admin access required" : message;
+                break;
+            case 404:
+                message = message.isEmpty() ? "No users found" : message;
+                break;
+            case 500:
+                message = message.isEmpty() ? "Internal server error" : message;
+                break;
+            default:
+                message = message.isEmpty() ? "An error occurred while searching users" : message;
+                break;
+            }
+            emit usersFetched(false, QVariantList(), message);
         }
         reply->deleteLater(); });
 }
