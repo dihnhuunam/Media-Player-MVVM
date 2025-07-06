@@ -69,6 +69,7 @@ Item {
     }
 
     Rectangle {
+        id: backgroundRect
         anchors.fill: parent
         gradient: Gradient {
             GradientStop {
@@ -79,6 +80,14 @@ Item {
                 position: 1.0
                 color: "#e8ecef"
             }
+        }
+
+        layer.enabled: changePasswordPopup.visible
+        layer.effect: GaussianBlur {
+            radius: changePasswordPopup.visible ? 8 : 0
+            samples: 16
+            cached: true
+            transparentBorder: true
         }
 
         Rectangle {

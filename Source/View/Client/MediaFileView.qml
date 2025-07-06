@@ -268,65 +268,6 @@ Item {
                         visible: false
                     }
                 }
-
-                RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20 * scaleFactor
-                    visible: playlistViewModel.totalPages > 0 && (searchInput.text === "Search Songs" || searchInput.text === "")
-
-                    HoverButton {
-                        text: "Previous"
-                        enabled: playlistViewModel.currentPage > 0
-                        Layout.preferredWidth: 100 * scaleFactor
-                        Layout.preferredHeight: 40 * scaleFactor
-                        onClicked: {
-                            playlistViewModel.setCurrentPage(playlistViewModel.currentPage - 1);
-                            console.log("Previous page, current:", playlistViewModel.currentPage + 1);
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: parent.enabled ? "#ffffff" : "#a0aec0"
-                            font.pixelSize: mediaItemFontSize * scaleFactor
-                            font.family: "Arial"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Rectangle {
-                            radius: 12 * scaleFactor
-                            color: parent.enabled ? (parent.hovered ? "#3182ce" : "#2b6cb0") : "#e2e8f0"
-                        }
-                    }
-
-                    Text {
-                        text: playlistViewModel.totalPages > 0 ? ("Page " + (playlistViewModel.currentPage + 1) + " of " + playlistViewModel.totalPages) : "No pages"
-                        font.pixelSize: mediaItemFontSize * scaleFactor
-                        font.family: "Arial"
-                        color: "#2d3748"
-                    }
-
-                    HoverButton {
-                        text: "Next"
-                        enabled: playlistViewModel.currentPage < playlistViewModel.totalPages - 1
-                        Layout.preferredWidth: 100 * scaleFactor
-                        Layout.preferredHeight: 40 * scaleFactor
-                        onClicked: {
-                            playlistViewModel.setCurrentPage(playlistViewModel.currentPage + 1);
-                            console.log("Next page, current:", playlistViewModel.currentPage + 1);
-                        }
-                        contentItem: Text {
-                            text: parent.text
-                            color: parent.enabled ? "#ffffff" : "#a0aec0"
-                            font.pixelSize: mediaItemFontSize * scaleFactor
-                            font.family: "Arial"
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                        background: Rectangle {
-                            radius: 12 * scaleFactor
-                            color: parent.enabled ? (parent.hovered ? "#3182ce" : "#2b6cb0") : "#e2e8f0"
-                        }
-                    }
-                }
             }
         }
     }
