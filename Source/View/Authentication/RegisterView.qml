@@ -545,24 +545,31 @@ Item {
         id: notificationPopup
         x: (parent.width - width) / 2
         y: (parent.height - height) / 2
-        width: 300 * scaleFactor
-        height: 100 * scaleFactor
+        width: Math.min(Math.max(notificationText.implicitWidth + 40 * scaleFactor, 200 * scaleFactor), parent.width * 0.8)
+        height: notificationText.implicitHeight + 40 * scaleFactor
         modal: true
         focus: true
         property string message: ""
         property color color: "#48bb78"
+        opacity: 0.95
 
         background: Rectangle {
             color: notificationPopup.color
             radius: 8 * scaleFactor
+            border.color: Qt.darker(notificationPopup.color, 1.2)
+            border.width: 1 * scaleFactor
         }
 
         Text {
+            id: notificationText
             anchors.centerIn: parent
             text: notificationPopup.message
             font.pixelSize: formFieldFontSize * scaleFactor
             font.family: "Arial"
             color: "#ffffff"
+            wrapMode: Text.WordWrap
+            width: Math.min(implicitWidth, parent.width - 40 * scaleFactor)
+            horizontalAlignment: Text.AlignHCenter
         }
 
         Timer {

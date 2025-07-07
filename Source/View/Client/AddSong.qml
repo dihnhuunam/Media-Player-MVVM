@@ -244,28 +244,32 @@ Item {
             id: notificationPopup
             x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300 * scaleFactor
-            height: 100 * scaleFactor
+            width: Math.min(Math.max(notificationText.implicitWidth + 40 * scaleFactor, 200 * scaleFactor), parent.width * 0.8)
+            height: notificationText.implicitHeight + 40 * scaleFactor
             modal: true
             focus: true
+            opacity: 0.95
+
             background: Rectangle {
                 color: notificationPopup.notificationColor
                 radius: 8 * scaleFactor
+                border.color: Qt.darker(notificationPopup.notificationColor, 1.2)
+                border.width: 1 * scaleFactor
             }
 
             property string message: ""
             property color notificationColor: "#48bb78"
 
             Text {
+                id: notificationText
                 anchors.centerIn: parent
                 text: notificationPopup.message
                 font.pixelSize: 16 * scaleFactor
                 font.family: "Arial"
                 color: "#ffffff"
-                wrapMode: Text.Wrap
+                wrapMode: Text.WordWrap
+                width: Math.min(implicitWidth, parent.width - 40 * scaleFactor)
                 horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                width: parent.width - 20 * scaleFactor
             }
 
             Timer {
